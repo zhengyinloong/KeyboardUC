@@ -15,8 +15,8 @@ def FindDevices():
 
 def FindDevice(vid, pid):
     dev = usb.core.find(idVendor=vid, idProduct=pid)  # USB\VID_0D00&PID_0721&REV_0100&MI_00
-    if dev != None:
-        dev.set_configuration()
+    # if dev != None:
+    #     dev.set_configuration()
     return dev
 
 
@@ -72,9 +72,14 @@ def SendData(device, endpoint_out, data):
 
 if __name__ == '__main__':
     # dev = FindDevice(vid=0x0D00, pid=0x0721)
-    dev = FindDevice(vid=0x258a, pid=0x0017)
-    name = usb.util.get_string(dev, 2)
-    print(name, '\n', dev)
+    # devs = FindDevices()
+    # print(devs)
+    # for dev in devs:
+    #     print(dev)
+    dev = FindDevice(vid=0x25a7, pid=0xfa23)
+    print(dev)
+    # name = usb.util.get_string(dev, 0)
+    # print(name, '\n', dev)
     interface = ReadConfig(dev)[1]
     print(interface)
     epin = interface[0]
