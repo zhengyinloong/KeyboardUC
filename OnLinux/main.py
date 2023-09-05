@@ -2,19 +2,32 @@
 # main.py in KeyboardUC
 # zhengyinloong
 # 2023/08/30 02:38
-
-from PyQt5.QtCore import QTimer, QCoreApplication, Qt
+import bluetooth
+import usb
+from PyQt5.QtCore import QCoreApplication, Qt
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QFontDialog, QColorDialog
-from main_ui import *
-from sub_ui_usb import *
-from user import *
-import struct
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QFontDialog, QFileDialog
+from ui.main_ui import *
+from ui.sub_ui_usb import *
+from ui.sub_ui_bluetooth import *
+from ui.sub_ui_iap import *
+from config.settings import *
+from user import usbdriver, bluetoothdriver
 import sys
 
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
+from PyQt5 import QtCore
+
+import subprocess
+
+command = 'sudo -S chmod 777 */ -R'
+password = PASSWORD
+process = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE)
+process.communicate(password.encode())
 
 
+# sudo chmod 777 */ -R
+# sudo -S python3 main.py
 class Worker(QObject):
     finished = pyqtSignal()
     received_data = pyqtSignal(str)
@@ -28,7 +41,7 @@ class Worker(QObject):
     def ReceiveData(self):
         while self.isRecv:
             try:
-                data_recv = ReceiveData(self.Device, self.ep_in)
+                data_recv = usbdriver.ReceiveData(self.Device, self.ep_in)
                 self.received_data.emit(f'{data_recv}')
             except Exception as e:
                 print(e)
@@ -47,20 +60,24 @@ class Main(QMainWindow, Ui_MainWindow):
         self.CallBackFunctions()  # 各个控件的功能函数集
 
     def PrepOpen(self):
-        self.subwins = {'USB': Sub_USB(self)}
+        self.subwins = {'USB': Sub_USB(self),
+                        'BlueTooth': Sub_BlueTooth(self),
+                        'IAP': Sub_IAP(self)}
+
+        self.resize(UI_WIDTH, UI_HEIGHT)
 
     def CallBackFunctions(self):
         # Menu bar
         self.actionQuit.triggered.connect(self.Quit)
-        self.actionSettings.triggered.connect(self.Quit)
+        # self.actionSettings.triggered.connect(self.Quit)
         self.actionHelp.triggered.connect(self.Quit)
         self.actionAbout.triggered.connect(self.ShowAbout)
 
         # Buttons
 
         self.btn_USB.clicked.connect(lambda: self.OpenSubWindow('USB'))
-        self.btn_BlueTooth.clicked.connect(lambda: self.OpenSubWindow('USB'))
-        self.btn_More.clicked.connect(lambda: self.OpenSubWindow('USB'))
+        self.btn_BlueTooth.clicked.connect(lambda: self.OpenSubWindow('BlueTooth'))
+        self.btn_IAP.clicked.connect(lambda: self.OpenSubWindow('IAP'))
 
     def OpenSubWindow(self, sub: str):
         self.subwins[sub].show()
@@ -79,7 +96,7 @@ class Main(QMainWindow, Ui_MainWindow):
                 <h2>Keyboard UC v1.0</h2>
                 <p>Production: Room 306,Experimental Building,NCEPU(Baoding)</p>
                 <p>Author: Zheng Yinlong,NCEPU(Baoding)</p>
-                <p>要了解更多信息，请访问<a href="https://github.com/zhengyinloong/qingzhou_shangweiji">https://github.com/zhengyinloong</a></p>
+                <p>To learn more, please visit <a href="https://github.com/zhengyinloong/KeyboardUC">https://github.com/zhengyinloong</a></p>
             </body>
         </html>
         """
@@ -98,22 +115,24 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
         self.parentwin = parentwin
         super(Sub_USB, self).__init__()
         self.setupUi(self)
-
         # ============ ADD ====================
-
-        self.worker = None
-        self.thread = None
 
         self.PrepOpen()  # 初始化参数和控件状态
         self.CallBackFunctions()  # 各个控件的功能函数集
 
     def PrepOpen(self):
+        self.resize(UI_WIDTH, UI_HEIGHT)
+
         self.PrepParameters()
         self.PrepWidgets()
 
     def PrepParameters(self):
+
+        self.worker = None
+        self.thread = None
+
         self.Font = QFont()
-        self.Font.setPixelSize(6)
+        self.Font.setPixelSize(10)
 
         # self.VID = 0x0D00
         # self.PID = 0x0721
@@ -145,9 +164,10 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
         self.actionFonts.triggered.connect(lambda: self.SetFonts([
             self.textBrowser_RECEIVE,
             self.textBrowser_SEND]))
-
+        self.actionQuit.triggered.connect(self.Quit)
         # Buttons
-        self.pushButton_FindDevices.clicked.connect(self.FindDevice)
+        self.pushButton_FindDevices.clicked.connect(self.FindDevices)
+        self.pushButton_ConnectDevice.clicked.connect(self.ConnectDevice)
         self.pushButton_ReadConfig.clicked.connect(self.ReadConfig)
         self.pushButton_SendData.clicked.connect(self.SendData)
         # self.pushButton_ReceiveData.clicked.connect(self.ReceiveData)
@@ -205,7 +225,7 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
 
         while self.isRecv:
             try:
-                self.data_recv = ReceiveData(self.Device, self.ep_in)
+                self.data_recv = usbdriver.ReceiveData(self.Device, self.ep_in)
                 self.textBrowser_RECEIVE.append(f'{self.data_recv}')
             except Exception as e:
                 print(e)
@@ -240,13 +260,27 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
         if ok:
             # for widget_ in widget.findChildren():
             self.Font = font
-        for widget in widgets:
-            widget.setFont(self.Font)
+        if widgets:
+            for widget in widgets:
+                widget.setFont(self.Font)
 
-    def FindDevice(self):
+    def FindDevices(self):
+        try:
+            devs = usbdriver.FindDevices()
+            if devs:
+                count = 0
+                for device in usbdriver.FindDevices():
+                    count += 1
+                self.textBrowser_RECEIVE.append(f"FIND {count} DEVICES")
+                for dev in devs:
+                    self.textBrowser_RECEIVE.append(f"{dev}")
+        except Exception as e:
+            self.textBrowser_RECEIVE.append(f"NOT FOUND:\n{e}")
+
+    def ConnectDevice(self):
         self.lastDevice = self.Device
         try:
-            self.Device = FindDevice(self.VID, self.PID)
+            self.Device = usbdriver.FindDevice(self.VID, self.PID)
             if self.Device == None:
 
                 self.textBrowser_RECEIVE.append(f'({self.VID}.{self.PID}) NOT FOUND')
@@ -264,12 +298,12 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
             # self.config, self.interface = ReadConfig(
             #     self.Device, self.Interface_Number, self.Alternate_setting)
             #
-            self.config, self.interface = ReadConfig(self.Device, self.Interface_Number)
+            self.config, self.interface = usbdriver.ReadConfig(self.Device, self.Interface_Number)
             self.lineEdit_Interface.setText(f'{self.interface.bInterfaceNumber}')
 
             # self.textBrowser_RECEIVE.append(f'{self.Device}')
 
-            self.ep_in, self.ep_out = Endpoints(self.interface)
+            self.ep_in, self.ep_out = usbdriver.Endpoints(self.interface)
 
             self.ParsingEndpoints()
             self.textBrowser_RECEIVE.append(f'endpoint in:\n{self.ep_in}')
@@ -301,6 +335,220 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
             self.lineEdit_EPOAddress.setText(f'0x{self.EPOAddress:0X}')
             self.lineEdit_EPOClass.setText(f'{self.EPOClass}')
             self.lineEdit_EPOLength.setText(f'{self.EPOLength}')
+
+    def Quit(self):
+        self.close()
+        # QCoreApplication.quit()
+        # QCoreApplication.exit(0)
+        # ============ ADD ===========
+
+        self.parentwin.show()
+
+    def closeEvent(self, event):
+        # reply = QMessageBox.question(self, '确认', '确定要关闭窗口吗？', QMessageBox.Yes | QMessageBox.No,
+        #                              QMessageBox.No)
+        reply = QMessageBox.Yes
+        if reply == QMessageBox.Yes:
+            # 执行你自定义的操作，比如保存数据或清理资源
+            # print("执行关闭操作")
+            self.Quit()
+            event.accept()
+        else:
+            event.ignore()
+
+
+class Sub_BlueTooth(QMainWindow, Ui_Subui_BlueTooth):
+    def __init__(self, parentwin):
+        self.parentwin = parentwin
+        super(Sub_BlueTooth, self).__init__()
+        self.setupUi(self)
+        # ============ ADD ====================
+
+        self.PrepOpen()  # 初始化参数和控件状态
+        self.CallBackFunctions()  # 各个控件的功能函数集
+
+    def PrepOpen(self):
+        self.resize(UI_WIDTH, UI_HEIGHT)
+
+        self.PrepParameters()
+        self.PrepWidgets()
+
+    def PrepParameters(self):
+        pass
+
+    def PrepWidgets(self):
+
+        pass
+
+    def CallBackFunctions(self):
+        self.actionFonts.triggered.connect(lambda: self.SetFonts([self.textBrowser_RECEIVE,
+                                                                  self.textBrowser_SEND]))
+        self.actionQuit.triggered.connect(self.Quit)
+
+        self.pushButton_FindDevices.clicked.connect(self.FindDevices)
+        self.pushButton_Clear.clicked.connect(self.ClearHistory)
+
+        pass
+
+    def SendData(self):
+        pass
+
+    def ReceiveData(self):
+        pass
+
+    def ClearHistory(self):
+
+        self.textBrowser_RECEIVE.clear()
+        self.textBrowser_SEND.clear()
+        pass
+
+    def ParametersReload(self):
+        pass
+
+    @staticmethod
+    def transe2int(num_str: str):
+        if ('x' in num_str) or ('X' in num_str):
+            num = int(num_str, 16)
+        else:
+            num = int(num_str)
+        return num
+
+    def SetFonts(self, widgets):
+        font, ok = QFontDialog.getFont()
+        if ok:
+            # for widget_ in widget.findChildren():
+            self.Font = font
+        if widgets:
+            for widget in widgets:
+                widget.setFont(self.Font)
+
+    def FindDevices(self):
+        self.textBrowser_RECEIVE.append(f"Searching for devices, please wait ...")
+        try:
+            devs = bluetoothdriver.FindDevices()
+            if devs:
+                count = 0
+                for device in devs:
+                    count += 1
+                self.textBrowser_RECEIVE.append(f"FIND {count} DEVICES")
+                for dev in iter(devs):
+                    name = bluetooth.lookup_name(dev)
+                    self.textBrowser_RECEIVE.append(f"{dev} : {name}")
+        except Exception as e:
+            self.textBrowser_RECEIVE.append(f"NOT FOUND:\n{e}")
+
+    def ConnectDevice(self):
+        self.lastDevice = self.Device
+        pass
+
+    def ReadConfig(self):
+        pass
+
+    def Quit(self):
+        self.close()
+        # QCoreApplication.quit()
+        # QCoreApplication.exit(0)
+        # ============ ADD ===========
+
+        self.parentwin.show()
+
+    def closeEvent(self, event):
+        # reply = QMessageBox.question(self, '确认', '确定要关闭窗口吗？', QMessageBox.Yes | QMessageBox.No,
+        #                              QMessageBox.No)
+        reply = QMessageBox.Yes
+        if reply == QMessageBox.Yes:
+            # 执行你自定义的操作，比如保存数据或清理资源
+            # print("执行关闭操作")
+            self.Quit()
+            event.accept()
+        else:
+            event.ignore()
+
+
+class Sub_IAP(QMainWindow, Ui_Subui_IAP):
+    def __init__(self, parentwin):
+        self.parentwin = parentwin
+        super(Sub_IAP, self).__init__()
+        self.setupUi(self)
+        # ============ ADD ====================
+
+        self.PrepOpen()  # 初始化参数和控件状态
+        self.CallBackFunctions()  # 各个控件的功能函数集
+
+    def PrepOpen(self):
+        self.resize(UI_WIDTH, UI_HEIGHT)
+
+        self.PrepParameters()
+        self.PrepWidgets()
+
+    def PrepParameters(self):
+        pass
+
+    def PrepWidgets(self):
+
+        pass
+
+    def CallBackFunctions(self):
+        self.actionFonts.triggered.connect(lambda: self.SetFonts([]))
+
+        self.actionQuit.triggered.connect(self.Quit)
+        self.pushButton.clicked.connect(self.LoadFile)
+
+    def LoadFile(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.ReadOnly
+
+        file_name, _ = QFileDialog.getOpenFileName(self, 'Load File', '', 'All Files (*)', options=options)
+        print(file_name)
+        if '.bin' in file_name:
+            print('Load bin sucessfully')
+            self.file_name = file_name
+            self.DownloadFile()
+
+    def DownloadFile(self):
+
+        with open(self.file_name, 'rb') as file:
+            content = file.read()
+            print(content)
+            # 对文件内容进行处理，可以在这里编写你的逻辑
+
+    def ReceiveData(self):
+        pass
+
+    def ClearHistory(self):
+
+        # self.textBrowser_RECEIVE.clear()
+        # self.textBrowser_SEND.clear()
+        pass
+
+    def ParametersReload(self):
+        pass
+
+    @staticmethod
+    def transe2int(num_str: str):
+        if ('x' in num_str) or ('X' in num_str):
+            num = int(num_str, 16)
+        else:
+            num = int(num_str)
+        return num
+
+    def SetFonts(self, widgets):
+        font, ok = QFontDialog.getFont()
+        if ok:
+            # for widget_ in widget.findChildren():
+            self.Font = font
+        if widgets:
+            for widget in widgets:
+                widget.setFont(self.Font)
+
+    def FindDevices(self):
+        pass
+
+    def ConnectDevice(self):
+        pass
+
+    def ReadConfig(self):
+        pass
 
     def Quit(self):
         self.close()

@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-# user.py in KeyboardUC
+# usbdriver.py in KeyboardUC
 # zhengyinloong
 # 2023/08/28 12:48
 import time
