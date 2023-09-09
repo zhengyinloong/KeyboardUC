@@ -2,6 +2,7 @@
 # main.py in KeyboardUC
 # zhengyinloong
 # 2023/08/30 02:38
+import time
 
 import bluetooth
 import usb
@@ -276,7 +277,8 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
                 for dev in devs:
                     self.textBrowser_RECEIVE.append(f"{dev}")
         except Exception as e:
-            self.textBrowser_RECEIVE.append(f"NOT FOUND:\n{e}")
+            self.textBrowser_RECEIVE.append(f"NOT FOUND")
+            self.textBrowser_RECEIVE.append(f"Error:{e}")
 
     def ConnectDevice(self):
         self.lastDevice = self.Device
@@ -292,7 +294,7 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
         except Exception as e:
             self.Device = self.lastDevice
             self.textBrowser_RECEIVE.append(f'({self.VID}.{self.PID}) NOT FOUND')
-            self.textBrowser_RECEIVE.append(f'{e}')
+            self.textBrowser_RECEIVE.append(f'Error:{e}')
 
     def ReadConfig(self):
         try:
@@ -311,7 +313,7 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
             self.textBrowser_RECEIVE.append(f'endpoint out:\n{self.ep_out}')
 
         except Exception as e:
-            self.textBrowser_RECEIVE.append(f'{e}')
+            self.textBrowser_RECEIVE.append(f'Error:{e}')
 
     def ParsingEndpoints(self):
         # 0 表示 控制端点，1 表示 Isochronous 端点，2 表示 Bulk 端点，3 表示 Interrupt 端点。
@@ -375,10 +377,11 @@ class Sub_BlueTooth(QMainWindow, Ui_Subui_BlueTooth):
         self.PrepWidgets()
 
     def PrepParameters(self):
-        pass
+        self.Device = None
+        self.Address = '14:DD:9C:BC:51:7C'
 
     def PrepWidgets(self):
-
+        self.lineEdit_Address.setText(str(self.Address))
         pass
 
     def CallBackFunctions(self):
@@ -387,6 +390,9 @@ class Sub_BlueTooth(QMainWindow, Ui_Subui_BlueTooth):
         self.actionQuit.triggered.connect(self.Quit)
 
         self.pushButton_FindDevices.clicked.connect(self.FindDevices)
+        self.pushButton_ConnectDevice.clicked.connect(self.ConnectDevice)
+        self.lineEdit_Address.textChanged.connect(self.ParametersReload)
+
         self.pushButton_Clear.clicked.connect(self.ClearHistory)
 
         pass
@@ -404,6 +410,7 @@ class Sub_BlueTooth(QMainWindow, Ui_Subui_BlueTooth):
         pass
 
     def ParametersReload(self):
+        self.Address = self.lineEdit_Address.text()
         pass
 
     @staticmethod
@@ -436,10 +443,24 @@ class Sub_BlueTooth(QMainWindow, Ui_Subui_BlueTooth):
                     name = bluetooth.lookup_name(dev)
                     self.textBrowser_RECEIVE.append(f"{dev} : {name}")
         except Exception as e:
-            self.textBrowser_RECEIVE.append(f"NOT FOUND:\n{e}")
+            self.textBrowser_RECEIVE.append(f"NOT FOUND")
+            self.textBrowser_RECEIVE.append(f"Error:{e}")
 
     def ConnectDevice(self):
         self.lastDevice = self.Device
+        try:
+            self.Device = bluetoothdriver.ConnectDevice(self.Address)
+            if self.Device is None:
+                self.textBrowser_RECEIVE.append(f'({self.Address}) NOT FOUND')
+                self.Device = self.lastDevice
+            else:
+                self.DeviceName = name = bluetooth.lookup_name(self.Device)
+                self.textBrowser_RECEIVE.append(f'FIND ({self.Address}):\n{self.DeviceName}')
+        except Exception as e:
+            self.Device = self.lastDevice
+            self.textBrowser_RECEIVE.append(f'({self.Address}) NOT FOUND')
+            self.textBrowser_RECEIVE.append(f'Error:{e}')
+
         pass
 
     def ReadConfig(self):
