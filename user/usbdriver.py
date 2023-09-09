@@ -7,7 +7,16 @@ import time
 import usb.core
 import usb.util
 
+import subprocess
 
+from config.settings import *
+
+command = 'sudo -S chmod 777 */ -R'
+password = PASSWORD
+
+process = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE)
+process.communicate(password.encode())
+# sudo -S python3 usbdriver.py
 def FindDevices():
     devs = usb.core.find(find_all=True)
     return devs
@@ -15,8 +24,8 @@ def FindDevices():
 
 def FindDevice(vid, pid):
     dev = usb.core.find(idVendor=vid, idProduct=pid)  # USB\VID_0D00&PID_0721&REV_0100&MI_00
-    # if dev != None:
-    #     dev.set_configuration()
+    if dev != None:
+        dev.set_configuration()
     return dev
 
 
@@ -78,12 +87,12 @@ if __name__ == '__main__':
     #     print(dev)
     dev = FindDevice(vid=0x25a7, pid=0xfa23)
     print(dev)
-    # name = usb.util.get_string(dev, 0)
+    name = usb.util.get_string(dev, 0)
     # print(name, '\n', dev)
-    interface = ReadConfig(dev)[1]
-    print(interface)
-    epin = interface[0]
-    epout = interface[1]
+    # interface = ReadConfig(dev)[0]
+    # print(interface)
+    # epin = interface[0]
+    # epout = interface[1]
     # print(epin)
 
     # ReceiveData(dev,epin)
