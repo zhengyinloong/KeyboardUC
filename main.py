@@ -2,7 +2,6 @@
 # main.py in KeyboardUC
 # zhengyinloong
 # 2023/08/30 02:38
-import time
 
 import bluetooth
 import usb

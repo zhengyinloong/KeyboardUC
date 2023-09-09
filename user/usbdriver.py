@@ -9,7 +9,7 @@ import usb.util
 
 import subprocess
 
-from OnLinux.config.settings import *
+from config.settings import *
 
 command = 'sudo -S chmod 777 */ -R'
 password = PASSWORD
