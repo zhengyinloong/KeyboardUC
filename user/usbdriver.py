@@ -2,11 +2,16 @@
 # usbdriver.py in KeyboardUC
 # zhengyinloong
 # 2023/08/28 12:48
+
+import os
+
+os.environ['PYUSB_DEBUG'] = 'debug'
+
 import time
 
 import usb.core
 import usb.util
-
+import libusb
 import subprocess
 
 from config.settings import *
@@ -16,16 +21,24 @@ password = PASSWORD
 
 process = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE)
 process.communicate(password.encode())
+
+
 # sudo -S python3 usbdriver.py
 def FindDevices():
     devs = usb.core.find(find_all=True)
+    # devs = libusb.open_device_with_vid_pid()
     return devs
 
 
 def FindDevice(vid, pid):
     dev = usb.core.find(idVendor=vid, idProduct=pid)  # USB\VID_0D00&PID_0721&REV_0100&MI_00
-    if dev != None:
-        dev.set_configuration()
+    if dev is not None:
+        # dev.set_configuration()
+        # if dev.is_kernel_driver_active(0):
+        #     print('detach kernel driver')
+        #     dev.detach_kernel_driver(0)
+        dev.reset()
+    # clear any junk in the read buffer - so that init cmds will send
     return dev
 
 
@@ -60,15 +73,16 @@ def Endpoints(interface):
 def ReceiveData(device, endpoint_in):
     # print(epin.bInterval)
     try:
-        data = device.read(endpoint_in.bEndpointAddress, 64)
+        print(f'trying receive data from endpoint {endpoint_in.bEndpointAddress}')
+        data = device.read(endpoint_in.bEndpointAddress, 64,5000)
         print(f'{data}')
         time.sleep(endpoint_in.bInterval / 1000)
         # if data == b'\x01':
-        data = device.read(endpoint_in.bEndpointAddress, 7)
+        # data = device.read(endpoint_in.bEndpointAddress, 7)
         return data
         # else:
         #     return data
-            # return None
+        # return None
     except Exception as e:
         print(e)
         return None

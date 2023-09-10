@@ -1,0 +1,7 @@
+pyinstaller main.py -w -F --icon="swj.ico"
+
+pyinstaller main.py -w -F --icon="swj.ico" 
+
+pyinstaller main.py -w -F --icon="swj.ico"  --workpath ../app  --distpath ../app/dist
+
+pyinstaller main.py -w -F  --workpath ../app  --distpath ../app/dist

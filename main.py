@@ -135,13 +135,13 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
         self.Font = QFont()
         self.Font.setPixelSize(10)
 
-        # self.VID = 0x0D00
-        # self.PID = 0x0721
+        self.VID = 0x0D00
+        self.PID = 0x0721
         # self.VID = 0x258A
         # self.PID = 0x0017
-        self.VID = 0x25A7
-        self.PID = 0xFA23
-        self.Interface_Number = 0x0
+        # self.VID = 0x25A7
+        # self.PID = 0xFA23
+        self.Interface_Number = 0x04
         self.Alternate_setting = 0x0
 
         self.Device = None
@@ -282,13 +282,14 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
         self.lastDevice = self.Device
         try:
             self.Device = usbdriver.FindDevice(self.VID, self.PID)
-            if self.Device == None:
+            if self.Device is None:
 
                 self.textBrowser_RECEIVE.append(f'({self.VID}.{self.PID}) NOT FOUND')
                 self.Device = self.lastDevice
             else:
                 self.DeviceName = usb.util.get_string(self.Device, 2)  # 假设字符串描述符索引为 4
-                self.textBrowser_RECEIVE.append(f'FIND ({self.VID}.{self.PID}):\n{self.DeviceName}')
+                # self.textBrowser_RECEIVE.append(f'FIND ({self.VID}.{self.PID}):\n{self.DeviceName}')
+                self.textBrowser_RECEIVE.append(f'FIND ({self.Device}):\n{self.DeviceName}')
         except Exception as e:
             self.Device = self.lastDevice
             self.textBrowser_RECEIVE.append(f'({self.VID}.{self.PID}) NOT FOUND')
