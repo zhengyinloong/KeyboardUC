@@ -24,22 +24,26 @@ def FindDevices():
 
 def FindDevice(vid, pid):
     dev = usb.core.find(idVendor=vid, idProduct=pid)  # USB\VID_0D00&PID_0721&REV_0100&MI_00
-    if dev != None:
-        dev.set_configuration()
+    if dev is not None:
+        # print(f'{dev}')
+        # print(dev)
+        print('Device Found, Attempting code...')
     return dev
 
 
 def ReadConfig(dev, interface_number=0, alternate_setting=0):
     # 获取设备的配置
     dev_config = dev.get_active_configuration()
-
-    for interface in dev_config:
+    interface = None
+    for _interface in dev_config:
         # if interface.bInterfaceClass == usb.CLASS_HID and interface.bInterfaceNumber == interface_number:
-        if interface.bInterfaceNumber == interface_number:
-            # interface_number = interface.bInterfaceNumber
-            alternate_setting = interface.bAlternateSetting
+        if _interface.bInterfaceNumber == interface_number:
+            # interface_number = _interface.bInterfaceNumber
+            # alternate_setting = _interface.bAlternateSetting
+            # interface = dev_config[(interface_number, alternate_setting)]
+            interface = _interface
             break  # 找到 HID 类型的接口后退出循环
-    interface = dev_config[(interface_number, alternate_setting)]
+
     return dev_config, interface
 
 
@@ -60,17 +64,15 @@ def Endpoints(interface):
 def ReceiveData(device, endpoint_in):
     # print(epin.bInterval)
     try:
-        data = device.read(endpoint_in.bEndpointAddress, 64)
-        print(f'{data}')
-        time.sleep(endpoint_in.bInterval / 1000)
-        # if data == b'\x01':
-        data = device.read(endpoint_in.bEndpointAddress, 7)
+        data = device.read(endpoint_in.bEndpointAddress, endpoint_in.wMaxPacketSize,
+                           timeout=endpoint_in.bInterval)
+        # print(f'{data}')
         return data
         # else:
         #     return data
             # return None
     except Exception as e:
-        print(e)
+        # print(e)
         return None
 
 

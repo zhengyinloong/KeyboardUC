@@ -43,13 +43,73 @@ class Worker(QObject):
         while self.isRecv:
             try:
                 data_recv = usbdriver.ReceiveData(self.Device, self.ep_in)
-                self.received_data.emit(f'{data_recv}')
+                if data_recv is not None:
+                    parsed_data = self.ParsingData(data_recv)
+                    output = ''
+                    for t,d in parsed_data.items():
+                        output += f'{t}:{d}\n'
+
+                    self.received_data.emit(f'{output}')
             except Exception as e:
-                print(e)
+                # print(e)
                 self.received_data.emit(f'{e}')
                 continue
                 # break
         self.finished.emit()
+
+    def ParsingData(self, data):
+        """
+        鼠标发送给PC的数据每次4个字节
+        BYTE1 BYTE2 BYTE3 BYTE4
+        定义分别是：
+        BYTE1 --
+               |--bit7:   1   表示   Y   坐标的变化量超出－256   ~   255的范围,0表示没有溢出
+               |--bit6:   1   表示   X   坐标的变化量超出－256   ~   255的范围，0表示没有溢出
+               |--bit5:   Y   坐标变化的符号位，1表示负数，即鼠标向下移动
+               |--bit4:   X   坐标变化的符号位，1表示负数，即鼠标向左移动
+               |--bit3:     恒为1
+               |--bit2:     1表示中键按下
+               |--bit1:     1表示右键按下
+               |--bit0:     1表示左键按下
+        BYTE2 -- X坐标变化量，与byte的bit4组成9位符号数,负数表示向左移，正数表右移。用补码表示变化量
+        BYTE3 -- Y坐标变化量，与byte的bit5组成9位符号数，负数表示向下移，正数表上移。用补码表示变化量
+        BYTE4 -- 滚轮变化。
+        """
+
+        byte1 = data[0]
+        byte2 = data[1]
+        byte3 = data[2]
+        byte4 = data[3]
+
+        x_overflow = (byte1 & 0b10000000) >> 7
+        y_overflow = (byte1 & 0b01000000) >> 6
+        y_negative = (byte1 & 0b00100000) >> 5
+        x_negative = (byte1 & 0b00010000) >> 4
+        middle_btn_pressed = (byte1 & 0b00000100) >> 2
+        right_btn_pressed = (byte1 & 0b00000010) >> 1
+        left_btn_pressed = byte1 & 0b00000001
+
+        # Calculate X coordinate change
+        x_change = byte2 if not x_negative else -(256 - byte2)
+
+        # Calculate Y coordinate change
+        y_change = byte3 if not y_negative else -(256 - byte3)
+
+        # Get scroll wheel change
+        scroll_change = byte4
+
+        return {
+            'x_overflow': bool(x_overflow),
+            'y_overflow': bool(y_overflow),
+            'x_negative': bool(x_negative),
+            'y_negative': bool(y_negative),
+            'middle_btn_pressed': bool(middle_btn_pressed),
+            'right_btn_pressed': bool(right_btn_pressed),
+            'left_btn_pressed': bool(left_btn_pressed),
+            'x_change': x_change,
+            'y_change': y_change,
+            'scroll_change': scroll_change
+        }
 
 
 class Main(QMainWindow, Ui_MainWindow):
@@ -139,10 +199,10 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
         # self.PID = 0x0721
         # self.VID = 0x258A
         # self.PID = 0x0017
-        self.VID = 0x25A7
-        self.PID = 0xFA23
-        self.Interface_Number = 0x0
-        self.Alternate_setting = 0x0
+        self.VID = VENDOR_ID
+        self.PID = PRODUCT_ID
+        self.Interface_Number = 0x04
+        self.Alternate_setting = 0x00
 
         self.Device = None
 
@@ -216,23 +276,23 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
             # SendData(self.Device, self.ep_out, self.data_send)
             self.textBrowser_SEND.append(f'{self.data_send}')
         except Exception as e:
-            print(e)
+            # print(e)
             self.textBrowser_SEND.append(f'{e}')
 
-    def ReceiveData(self):
-        # self.isRecv = ~ self.isRecv
-        self.isRecv ^= True
-        self.pushButton_ReceiveData.setText('Stop' if self.isRecv else 'Receive data')
-
-        while self.isRecv:
-            try:
-                self.data_recv = usbdriver.ReceiveData(self.Device, self.ep_in)
-                self.textBrowser_RECEIVE.append(f'{self.data_recv}')
-            except Exception as e:
-                print(e)
-                self.textBrowser_RECEIVE.append(f'{e}')
-                break
-                # continue
+    # def ReceiveData(self):
+    #     # self.isRecv = ~ self.isRecv
+    #     self.isRecv ^= True
+    #     self.pushButton_ReceiveData.setText('Stop' if self.isRecv else 'Receive data')
+    #
+    #     while self.isRecv:
+    #         try:
+    #             self.data_recv = usbdriver.ReceiveData(self.Device, self.ep_in)
+    #             self.textBrowser_RECEIVE.append(f'{self.data_recv}')
+    #         except Exception as e:
+    #             print(e)
+    #             self.textBrowser_RECEIVE.append(f'{e}')
+    #             break
+    #             # continue
 
     def ClearHistory(self):
 
@@ -283,7 +343,7 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
         self.lastDevice = self.Device
         try:
             self.Device = usbdriver.FindDevice(self.VID, self.PID)
-            if self.Device == None:
+            if self.Device is None:
 
                 self.textBrowser_RECEIVE.append(f'({self.VID}.{self.PID}) NOT FOUND')
                 self.Device = self.lastDevice
