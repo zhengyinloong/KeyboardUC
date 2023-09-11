@@ -60,22 +60,45 @@ class Worker(QObject):
     def ParsingData(self, data):
         """
         鼠标发送给PC的数据每次4个字节
-        BYTE1 BYTE2 BYTE3 BYTE4
-        定义分别是：
-        BYTE1 --
-               |--bit7:   1   表示   Y   坐标的变化量超出－256   ~   255的范围,0表示没有溢出
-               |--bit6:   1   表示   X   坐标的变化量超出－256   ~   255的范围，0表示没有溢出
-               |--bit5:   Y   坐标变化的符号位，1表示负数，即鼠标向下移动
-               |--bit4:   X   坐标变化的符号位，1表示负数，即鼠标向左移动
-               |--bit3:     恒为1
-               |--bit2:     1表示中键按下
-               |--bit1:     1表示右键按下
-               |--bit0:     1表示左键按下
-        BYTE2 -- X坐标变化量，与byte的bit4组成9位符号数,负数表示向左移，正数表右移。用补码表示变化量
-        BYTE3 -- Y坐标变化量，与byte的bit5组成9位符号数，负数表示向下移，正数表上移。用补码表示变化量
-        BYTE4 -- 滚轮变化。
-        """
+            BYTE1 BYTE2 BYTE3 BYTE4
+            定义分别是：
+            BYTE1 --
+                   |--bit7:   1   表示   Y   坐标的变化量超出－256   ~   255的范围,0表示没有溢出
+                   |--bit6:   1   表示   X   坐标的变化量超出－256   ~   255的范围，0表示没有溢出
+                   |--bit5:   Y   坐标变化的符号位，1表示负数，即鼠标向下移动
+                   |--bit4:   X   坐标变化的符号位，1表示负数，即鼠标向左移动
+                   |--bit3:     恒为1
+                   |--bit2:     1表示中键按下
+                   |--bit1:     1表示右键按下
+                   |--bit0:     1表示左键按下
+            BYTE2 -- X坐标变化量，与byte的bit4组成9位符号数,负数表示向左移，正数表右移。用补码表示变化量
+            BYTE3 -- Y坐标变化量，与byte的bit5组成9位符号数，负数表示向下移，正数表上移。用补码表示变化量
+            BYTE4 -- 滚轮变化。
+        键盘发送给PC的数据每次8个字节
+            BYTE1 BYTE2 BYTE3 BYTE4 BYTE5 BYTE6 BYTE7 BYTE8
+            定义分别是：
 
+            BYTE0 --（0 = OFF，1 = ON，CONSTANT为保留位）
+                   |--bit0:   NUM LOCK
+                   |--bit1:   CAPS LOCK
+                   |--bit2:   SCROLL LOCK
+                   |--bit3:   COMPOSE
+                   |--bit4:   KANA
+                   |--bit5:   CONSTANT
+                   |--bit6:   CONSTANT
+                   |--bit7:   CONSTANT
+            BYTE1 --
+                   |--bit0:   Left Control是否按下，按下为1
+                   |--bit1:   Left Shift  是否按下，按下为1
+                   |--bit2:   Left Alt    是否按下，按下为1
+                   |--bit3:   Left GUI    是否按下，按下为1
+                   |--bit4:   Right Control是否按下，按下为1
+                   |--bit5:   Right Shift 是否按下，按下为1
+                   |--bit6:   Right Alt   是否按下，按下为1
+                   |--bit7:   Right GUI   是否按下，按下为1
+            BYTE2 -- 保留位
+            BYTE3--BYTE8 -- 这六个为普通按键
+        """
         byte1 = data[0]
         byte2 = data[1]
         byte3 = data[2]
@@ -398,13 +421,25 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
             self.lineEdit_EPOClass.setText(f'{self.EPOClass}')
             self.lineEdit_EPOLength.setText(f'{self.EPOLength}')
 
+    def ReleaseDevice(self):
+        if self.Device is not None:
+            try:
+                # self.worker.finished()
+                usbdriver.ReleaseDevice(self.Device,self.Interface_Number)
+            except Exception as e:
+                print(f'{e}')
+
+
     def Quit(self):
         self.close()
         # QCoreApplication.quit()
         # QCoreApplication.exit(0)
-        # ============ ADD ===========
 
+    def DoIfQuit(self):
+        # ============ ADD ===========
+        self.ReleaseDevice()
         self.parentwin.show()
+        print(f'quit{self}')
 
     def closeEvent(self, event):
         # reply = QMessageBox.question(self, '确认', '确定要关闭窗口吗？', QMessageBox.Yes | QMessageBox.No,
@@ -412,11 +447,11 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
         reply = QMessageBox.Yes
         if reply == QMessageBox.Yes:
             # 执行你自定义的操作，比如保存数据或清理资源
-            # print("执行关闭操作")
-            self.Quit()
+            self.DoIfQuit()
             event.accept()
         else:
             event.ignore()
+
 
 
 class Sub_BlueTooth(QMainWindow, Ui_Subui_BlueTooth):

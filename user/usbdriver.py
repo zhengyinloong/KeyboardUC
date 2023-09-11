@@ -16,6 +16,8 @@ password = PASSWORD
 
 process = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE)
 process.communicate(password.encode())
+
+
 # sudo -S python3 usbdriver.py
 def FindDevices():
     devs = usb.core.find(find_all=True)
@@ -32,6 +34,13 @@ def FindDevice(vid, pid):
 
 
 def ReadConfig(dev, interface_number=0, alternate_setting=0):
+    if dev.is_kernel_driver_active(interface_number) is True:
+        # tell the kernel to detach
+        # print('tell the kernel to detach')
+        dev.detach_kernel_driver(interface_number)
+        # claim the device
+        # print('claim the device')
+        usb.util.claim_interface(dev, interface_number)
     # 获取设备的配置
     dev_config = dev.get_active_configuration()
     interface = None
@@ -62,23 +71,28 @@ def Endpoints(interface):
 
 
 def ReceiveData(device, endpoint_in):
-    # print(epin.bInterval)
     try:
         data = device.read(endpoint_in.bEndpointAddress, endpoint_in.wMaxPacketSize,
                            timeout=endpoint_in.bInterval)
         # print(f'{data}')
         return data
-        # else:
-        #     return data
-            # return None
     except Exception as e:
-        # print(e)
+        # print(e.args)
+        if e.args == ('Resource busy',):
+            time.sleep(1)
         return None
 
 
 def SendData(device, endpoint_out, data):
     data = data.encode()
     device.write(endpoint_out.bEndpointAddress, data)
+
+
+def ReleaseDevice(dev, interface_num):
+    # release the device
+    usb.util.release_interface(dev, interface_num)
+    # # reattach the device to the OS kernel
+    dev.attach_kernel_driver(interface_num)
 
 
 if __name__ == '__main__':
@@ -93,10 +107,10 @@ if __name__ == '__main__':
     # print(name, '\n', dev)
     # interface = ReadConfig(dev)[0]
     # print(interface)
-    # epin = interface[0]
-    # epout = interface[1]
-    # print(epin)
+    # epi = interface[0]
+    # pout = interface[1]
+    # print(epi)
 
-    # ReceiveData(dev,epin)
+    # ReceiveData(dev,epi)
     # data = 'hello'
-    # SendData(dev, epout, data)
+    # SendData(dev, pout, data)
