@@ -46,7 +46,7 @@ class Worker(QObject):
                 if data_recv is not None:
                     parsed_data = self.ParsingData(data_recv)
                     output = ''
-                    for t,d in parsed_data.items():
+                    for t, d in parsed_data.items():
                         output += f'{t}:{d}\n'
 
                     self.received_data.emit(f'{output}')
@@ -195,8 +195,8 @@ class Main(QMainWindow, Ui_MainWindow):
 
 
 class Sub_USB(QMainWindow, Ui_Subui_USB):
-    def __init__(self, parentwin):
-        self.parentwin = parentwin
+    def __init__(self, parent):
+        self.parent = parent
         super(Sub_USB, self).__init__()
         self.setupUi(self)
         # ============ ADD ====================
@@ -281,6 +281,7 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
 
         self.worker.isRecv = not self.worker.isRecv
         self.pushButton_ReceiveData.setText('Stop' if self.worker.isRecv else 'Receive data')
+        self.textBrowser_RECEIVE.append('Receive data' if self.worker.isRecv else 'Stop')
 
     def onWorkerFinished(self):
         self.worker = None
@@ -424,11 +425,9 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
     def ReleaseDevice(self):
         if self.Device is not None:
             try:
-                # self.worker.finished()
-                usbdriver.ReleaseDevice(self.Device,self.Interface_Number)
+                usbdriver.ReleaseDevice(self.Device, self.Interface_Number)
             except Exception as e:
                 print(f'{e}')
-
 
     def Quit(self):
         self.close()
@@ -438,7 +437,7 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
     def DoIfQuit(self):
         # ============ ADD ===========
         self.ReleaseDevice()
-        self.parentwin.show()
+        self.parent.show()
         print(f'quit{self}')
 
     def closeEvent(self, event):
@@ -453,10 +452,9 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
             event.ignore()
 
 
-
 class Sub_BlueTooth(QMainWindow, Ui_Subui_BlueTooth):
-    def __init__(self, parentwin):
-        self.parentwin = parentwin
+    def __init__(self, parent):
+        self.parent = parent
         super(Sub_BlueTooth, self).__init__()
         self.setupUi(self)
         # ============ ADD ====================
@@ -560,13 +558,17 @@ class Sub_BlueTooth(QMainWindow, Ui_Subui_BlueTooth):
     def ReadConfig(self):
         pass
 
+
     def Quit(self):
         self.close()
         # QCoreApplication.quit()
         # QCoreApplication.exit(0)
-        # ============ ADD ===========
 
-        self.parentwin.show()
+    def DoIfQuit(self):
+        # ============ ADD ===========
+        # self.ReleaseDevice()
+        self.parent.show()
+        print(f'quit{self}')
 
     def closeEvent(self, event):
         # reply = QMessageBox.question(self, '确认', '确定要关闭窗口吗？', QMessageBox.Yes | QMessageBox.No,
@@ -574,16 +576,15 @@ class Sub_BlueTooth(QMainWindow, Ui_Subui_BlueTooth):
         reply = QMessageBox.Yes
         if reply == QMessageBox.Yes:
             # 执行你自定义的操作，比如保存数据或清理资源
-            # print("执行关闭操作")
-            self.Quit()
+            self.DoIfQuit()
             event.accept()
         else:
             event.ignore()
 
 
 class Sub_IAP(QMainWindow, Ui_Subui_IAP):
-    def __init__(self, parentwin):
-        self.parentwin = parentwin
+    def __init__(self, parent):
+        self.parent = parent
         super(Sub_IAP, self).__init__()
         self.setupUi(self)
         # ============ ADD ====================
@@ -608,24 +609,31 @@ class Sub_IAP(QMainWindow, Ui_Subui_IAP):
         self.actionFonts.triggered.connect(lambda: self.SetFonts([]))
 
         self.actionQuit.triggered.connect(self.Quit)
-        self.pushButton.clicked.connect(self.LoadFile)
+        self.pushButton_OpenFile.clicked.connect(self.OpenFile)
 
-    def LoadFile(self):
+    def OpenFile(self):
         options = QFileDialog.Options()
         options |= QFileDialog.ReadOnly
 
         file_name, _ = QFileDialog.getOpenFileName(self, 'Load File', '', 'All Files (*)', options=options)
-        print(file_name)
+
         if '.bin' in file_name:
-            print('Load bin sucessfully')
+            # print(file_name)
             self.file_name = file_name
+            self.lineEdit.setText(f'{self.file_name}')
+            self.textBrowser_2.append(f'{self.file_name}Load bin successfully')
+
             self.DownloadFile()
+        else:
+            self.textBrowser_2.append(f'{file_name} is not a bin file,please reload.')
+
 
     def DownloadFile(self):
 
         with open(self.file_name, 'rb') as file:
             content = file.read()
             print(content)
+            self.textBrowser.append(f'{content}')
             # 对文件内容进行处理，可以在这里编写你的逻辑
 
     def ReceiveData(self):
@@ -666,13 +674,17 @@ class Sub_IAP(QMainWindow, Ui_Subui_IAP):
     def ReadConfig(self):
         pass
 
+
     def Quit(self):
         self.close()
         # QCoreApplication.quit()
         # QCoreApplication.exit(0)
-        # ============ ADD ===========
 
-        self.parentwin.show()
+    def DoIfQuit(self):
+        # ============ ADD ===========
+        # self.ReleaseDevice()
+        self.parent.show()
+        print(f'quit{self}')
 
     def closeEvent(self, event):
         # reply = QMessageBox.question(self, '确认', '确定要关闭窗口吗？', QMessageBox.Yes | QMessageBox.No,
@@ -680,8 +692,7 @@ class Sub_IAP(QMainWindow, Ui_Subui_IAP):
         reply = QMessageBox.Yes
         if reply == QMessageBox.Yes:
             # 执行你自定义的操作，比如保存数据或清理资源
-            # print("执行关闭操作")
-            self.Quit()
+            self.DoIfQuit()
             event.accept()
         else:
             event.ignore()
