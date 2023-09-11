@@ -12,3 +12,8 @@ sudo nautilus 50-myusbkeyboard.rules /etc/udev/rules.d
 ```bash
 sudo adduser <username> plugdev
 ```
+
+## EXAMPLES
+
++ usb test:
+  + ![usb test](resources/usbtest.png)
