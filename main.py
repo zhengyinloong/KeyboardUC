@@ -359,10 +359,16 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
                 self.textBrowser_RECEIVE.append(f"FIND {count} DEVICES")
                 for dev in usbdriver.FindDevices():
                     try:
-                        # device_name = usb.util.get_langids(dev)
-                        device_vid = dev.serial_number
-                        device_pid = dev.address
-                        self.textBrowser_RECEIVE.append(f"{dev[1]}")
+
+                        dev_id = f'{dev.idVendor:04X}:{dev.idProduct:04X}'
+                        dev_class = dev.bDeviceClass
+                        dev_name = None
+                        dev_usb = f'USB{int(hex(dev.bcdUSB)[2:])/100}'
+                        try:
+                            dev_name = f'{usb.util.get_string(dev, 2)}' if dev.iProduct == 2 else 'unknown'
+                        except :
+                            dev_name = f'unknown'
+                        self.textBrowser_RECEIVE.append(f"ID: {dev_id} Name: {dev_name} {dev_usb}")
                     except:
                         pass
         except Exception as e:
@@ -564,7 +570,6 @@ class Sub_BlueTooth(QMainWindow, Ui_Subui_BlueTooth):
     def ReadConfig(self):
         pass
 
-
     def Quit(self):
         self.close()
         # QCoreApplication.quit()
@@ -633,7 +638,6 @@ class Sub_IAP(QMainWindow, Ui_Subui_IAP):
         else:
             self.textBrowser_2.append(f'{file_name} is not a bin file,please reload.')
 
-
     def DownloadFile(self):
 
         with open(self.file_name, 'rb') as file:
@@ -679,7 +683,6 @@ class Sub_IAP(QMainWindow, Ui_Subui_IAP):
 
     def ReadConfig(self):
         pass
-
 
     def Quit(self):
         self.close()
