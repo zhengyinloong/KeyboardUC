@@ -357,8 +357,14 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
                 for device in usbdriver.FindDevices():
                     count += 1
                 self.textBrowser_RECEIVE.append(f"FIND {count} DEVICES")
-                for dev in devs:
-                    self.textBrowser_RECEIVE.append(f"{dev}")
+                for dev in usbdriver.FindDevices():
+                    try:
+                        # device_name = usb.util.get_langids(dev)
+                        device_vid = dev.serial_number
+                        device_pid = dev.address
+                        self.textBrowser_RECEIVE.append(f"{dev[1]}")
+                    except:
+                        pass
         except Exception as e:
             self.textBrowser_RECEIVE.append(f"NOT FOUND")
             self.textBrowser_RECEIVE.append(f"Error:{e}")
