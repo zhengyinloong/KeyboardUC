@@ -229,7 +229,7 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
 
         self.Device = None
 
-        self.data_send = None
+        self.data_send = '0x01'
         self.data_recv = None
         self.isRecv = False
 
@@ -297,7 +297,7 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
 
     def SendData(self):
         try:
-            # SendData(self.Device, self.ep_out, self.data_send)
+            usbdriver.SendData(self.Device, self.ep_out, self.data_send)
             self.textBrowser_SEND.append(f'{self.data_send}')
         except Exception as e:
             # print(e)
@@ -359,7 +359,6 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
                 self.textBrowser_RECEIVE.append(f"FIND {count} DEVICES")
                 for dev in usbdriver.FindDevices():
                     try:
-
                         dev_id = f'{dev.idVendor:04X}:{dev.idProduct:04X}'
                         dev_class = dev.bDeviceClass
                         dev_name = None
