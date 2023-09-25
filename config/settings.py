@@ -10,5 +10,8 @@ UI_HEIGHT = 600
 
 PASSWORD = '123456'
 
-VENDOR_ID = 0x0d00  # GD32-USB_Keyboard / mouse VID
-PRODUCT_ID = 0x0721  # GD32-USB_Keyboard / mouse PID
+# VENDOR_ID = 0x0d00  # GD32-USB_Keyboard / mouse VID
+# PRODUCT_ID = 0x0721  # GD32-USB_Keyboard / mouse PID
+
+VENDOR_ID = 0x1a86  # GD32-USB_Keyboard / I2C VID
+PRODUCT_ID = 0x5512  # GD32-USB_Keyboard / I2C PID

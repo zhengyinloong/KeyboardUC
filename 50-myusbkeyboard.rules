@@ -1,2 +1,4 @@
+# Keyboard USB
 ACTION=="add", SUBSYSTEMS=="usb", SUBSYSTEM=="usb", ATTRS{idVendor}=="0d00", ATTRS{idProduct}=="0721", MODE="0666", GROUP="plugdev"
-ACTION=="add", SUBSYSTEMS=="usb", SUBSYSTEM=="usb", ATTRS{idVendor}=="1A86", ATTRS{idProduct}=="5512", MODE="0666", GROUP="plugdev"
+# Keyboard I2C
+ACTION=="add", SUBSYSTEMS=="usb", SUBSYSTEM=="usb", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="5512", MODE="0666", GROUP="plugdev"
