@@ -5,14 +5,19 @@
 
 import serial
 
-ser = serial.Serial(port="/dev/ch34x_pis1",
-                    baudrate=19200,
-                    parity=serial.PARITY_NONE,
-                    stopbits=serial.STOPBITS_TWO,
-                    bytesize=serial.EIGHTBITS,
-                    timeout=0.500,
-                    )
-ser.flushInput()
-ser.flushOutput()
-ser.write(bytearray([0x02, 0xff]))
-test = ser.read()
+# I2C_test.py
+
+# -*- coding:utf-8 -*-
+
+import smbus
+import time
+
+i2c_addr = 0x72
+i2c_bus = smbus.SMBus(0)  # 其中 0 表示 i2c0
+tData = [0x02, 0xff,3]
+
+while True:
+    for i in range(2):
+        i2c_bus.write_byte_data(i2c_addr,0x02,tData[i])
+    print(tData)
+    time.sleep(1)

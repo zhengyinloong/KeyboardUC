@@ -224,12 +224,12 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
         # self.PID = 0x0017
         self.VID = VENDOR_ID
         self.PID = PRODUCT_ID
-        self.Interface_Number = 0x04
+        self.Interface_Number = 0x00
         self.Alternate_setting = 0x00
 
         self.Device = None
 
-        self.data_send = '\x72\x02\xff'
+        self.data_send = '\x02\xff\x02'
         self.data_recv = None
         self.isRecv = False
 
