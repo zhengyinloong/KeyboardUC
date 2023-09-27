@@ -229,7 +229,7 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
 
         self.Device = None
 
-        self.data_send = '\x02\xff'
+        self.data_send = '\x72\x02\xff'
         self.data_recv = None
         self.isRecv = False
 
