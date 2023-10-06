@@ -5,9 +5,6 @@
 
 import bluetooth
 import usb
-from PyQt5.QtCore import QCoreApplication, Qt
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QFontDialog, QFileDialog
 from ui.main_ui import *
 from ui.sub_ui_usb import *
 from ui.sub_ui_bluetooth import *
@@ -16,6 +13,9 @@ from config.settings import *
 from user import usbdriver, bluetoothdriver
 import sys
 
+from PyQt5.QtCore import QCoreApplication, Qt
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QFontDialog, QFileDialog
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from PyQt5 import QtCore
 
