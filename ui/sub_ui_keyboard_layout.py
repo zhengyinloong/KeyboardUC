@@ -312,7 +312,7 @@ class Ui_Subui_KeyboardLayout(object):
 
     def retranslateUi(self, Subui_KeyboardLayout):
         _translate = QtCore.QCoreApplication.translate
-        Subui_KeyboardLayout.setWindowTitle(_translate("Subui_KeyboardLayout", "KeyboardLayout"))
+        Subui_KeyboardLayout.setWindowTitle(_translate("Subui_KeyboardLayout", "Keyboard Layout"))
         self.groupBox_Keyboard.setTitle(_translate("Subui_KeyboardLayout", "Keyboard(8X8)"))
         self.groupBox_Remapping.setTitle(_translate("Subui_KeyboardLayout", "Remapping"))
         self.label_KeyNumber.setText(_translate("Subui_KeyboardLayout", "keynumber"))
