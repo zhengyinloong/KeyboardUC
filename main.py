@@ -79,15 +79,15 @@ class Worker(QObject):
             BYTE1 BYTE2 BYTE3 BYTE4 BYTE5 BYTE6 BYTE7 BYTE8
             定义分别是：
 
-            BYTE0 --（0 = OFF，1 = ON，CONSTANT为保留位）
-                   |--bit0:   NUM LOCK
-                   |--bit1:   CAPS LOCK
-                   |--bit2:   SCROLL LOCK
-                   |--bit3:   COMPOSE
-                   |--bit4:   KANA
-                   |--bit5:   CONSTANT
-                   |--bit6:   CONSTANT
-                   |--bit7:   CONSTANT
+            # BYTE0 --（0 = OFF，1 = ON，CONSTANT为保留位）
+            #        |--bit0:   NUM LOCK
+            #        |--bit1:   CAPS LOCK
+            #        |--bit2:   SCROLL LOCK
+            #        |--bit3:   COMPOSE
+            #        |--bit4:   KANA
+            #        |--bit5:   CONSTANT
+            #        |--bit6:   CONSTANT
+            #        |--bit7:   CONSTANT
             BYTE1 --
                    |--bit0:   Left Control是否按下，按下为1
                    |--bit1:   Left Shift  是否按下，按下为1
@@ -99,41 +99,90 @@ class Worker(QObject):
                    |--bit7:   Right GUI   是否按下，按下为1
             BYTE2 -- 保留位
             BYTE3--BYTE8 -- 这六个为普通按键
+            后6个字节表示最多6个普通按键信息,其中的值表示相应的按键编码,范围是0x00到0xFF。
+            0x00表示没有编码且没有按键被按下,0x01表示出现溢出,0x02表示键盘自检失败,0x03表示未定义错误。0x04表示A键,0x05表示B键,以此类推。
         """
-        byte1 = data[0]
-        byte2 = data[1]
-        byte3 = data[2]
-        byte4 = data[3]
+        length = len(data)
+        # print(length)
+        # print(data)
+        if length == 4:
+            byte1 = data[0]
+            byte2 = data[1]
+            byte3 = data[2]
+            byte4 = data[3]
 
-        x_overflow = (byte1 & 0b10000000) >> 7
-        y_overflow = (byte1 & 0b01000000) >> 6
-        y_negative = (byte1 & 0b00100000) >> 5
-        x_negative = (byte1 & 0b00010000) >> 4
-        middle_btn_pressed = (byte1 & 0b00000100) >> 2
-        right_btn_pressed = (byte1 & 0b00000010) >> 1
-        left_btn_pressed = byte1 & 0b00000001
+            x_overflow = (byte1 & 0b10000000) >> 7
+            y_overflow = (byte1 & 0b01000000) >> 6
+            y_negative = (byte1 & 0b00100000) >> 5
+            x_negative = (byte1 & 0b00010000) >> 4
+            middle_btn_pressed = (byte1 & 0b00000100) >> 2
+            right_btn_pressed = (byte1 & 0b00000010) >> 1
+            left_btn_pressed = byte1 & 0b00000001
 
-        # Calculate X coordinate change
-        x_change = byte2 if not x_negative else -(256 - byte2)
+            # Calculate X coordinate change
+            x_change = byte2 if not x_negative else -(256 - byte2)
 
-        # Calculate Y coordinate change
-        y_change = byte3 if not y_negative else -(256 - byte3)
+            # Calculate Y coordinate change
+            y_change = byte3 if not y_negative else -(256 - byte3)
 
-        # Get scroll wheel change
-        scroll_change = byte4
+            # Get scroll wheel change
+            scroll_change = byte4
 
-        return {
-            'x_overflow': bool(x_overflow),
-            'y_overflow': bool(y_overflow),
-            'x_negative': bool(x_negative),
-            'y_negative': bool(y_negative),
-            'middle_btn_pressed': bool(middle_btn_pressed),
-            'right_btn_pressed': bool(right_btn_pressed),
-            'left_btn_pressed': bool(left_btn_pressed),
-            'x_change': x_change,
-            'y_change': y_change,
-            'scroll_change': scroll_change
-        }
+            return {
+                'x_overflow': bool(x_overflow),
+                'y_overflow': bool(y_overflow),
+                'x_negative': bool(x_negative),
+                'y_negative': bool(y_negative),
+                'middle_btn_pressed': bool(middle_btn_pressed),
+                'right_btn_pressed': bool(right_btn_pressed),
+                'left_btn_pressed': bool(left_btn_pressed),
+                'x_change': x_change,
+                'y_change': y_change,
+                'scroll_change': scroll_change
+            }
+        elif length == 8:
+            byte1 = data[0]
+            byte2 = data[1]
+            # byte3 = data[2]
+            # byte4 = data[3]
+            # byte5 = data[4]
+            # byte6 = data[5]
+            # byte7 = data[6]
+            # byte8 = data[7]
+
+            usage_key_codes = data[2:]
+            usage_key = {}
+            usage_key_num = 0
+            for code in usage_key_codes:
+                usage_key_num += 1
+                if code == 0x00:
+                    usage_key[usage_key_num] = 'No Pressed'
+                elif code == 0x01:
+                    usage_key[usage_key_num] = 'Overflow'
+                elif code == 0x02:
+                    usage_key[usage_key_num] = 'SELF TEST FAILED'
+                elif code == 0x03:
+                    usage_key[usage_key_num] = 'Unknown Error'
+                else:
+                    usage_key[usage_key_num] = code
+
+            return {
+                'code': data,
+                'Left Control': byte1 & 0x01 > 0,
+                'Left Shift': byte1 & 0x02 > 0,
+                'Left Alt': byte1 & 0x04 > 0,
+                'Left Gui': byte1 & 0x08 > 0,
+                'Right Control': byte1 & 0x10 > 0,
+                'Right Shift': byte1 & 0x20 > 0,
+                'Right Alt': byte1 & 0x40 > 0,
+                'Right Gui': byte1 & 0x80 > 0,
+                'usage key1': usage_key[1],
+                'usage key2': usage_key[2],
+                'usage key3': usage_key[3],
+                'usage key4': usage_key[4],
+                'usage key5': usage_key[5],
+                'usage key6': usage_key[6]
+            }
 
 
 class Main(QMainWindow, Ui_MainWindow):
@@ -819,7 +868,6 @@ class Sub_KeyboardLayout(QWidget, Ui_Subui_KeyboardLayout):
             event.accept()
         else:
             event.ignore()
-
 
 if __name__ == '__main__':
     QtCore.QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling)  # 设置其窗口尺寸显示正常
