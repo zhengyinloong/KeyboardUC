@@ -116,10 +116,13 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
+       <item row="1" column="0" rowspan="2">
         <widget class="QTextBrowser" name="textBrowser_RECEIVE"/>
        </item>
        <item row="1" column="1">
+        <widget class="QLineEdit" name="lineEdit_SEND"/>
+       </item>
+       <item row="2" column="1">
         <widget class="QTextBrowser" name="textBrowser_SEND"/>
        </item>
       </layout>

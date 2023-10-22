@@ -84,7 +84,6 @@ def ReceiveData(device, endpoint_in):
 
 
 def SendData(device, endpoint_out, data):
-    data = data.encode()
     device.write(endpoint_out.bEndpointAddress, data)
 
 

@@ -183,6 +183,10 @@ class Worker(QObject):
                 'usage key5': usage_key[5],
                 'usage key6': usage_key[6]
             }
+        else:
+            return {
+                'data': data
+            }
 
 
 class Main(QMainWindow, Ui_MainWindow):
@@ -200,6 +204,7 @@ class Main(QMainWindow, Ui_MainWindow):
                         'IAP': Sub_IAP(self)}
 
         self.resize(UI_WIDTH, UI_HEIGHT)
+        # print(self.subwins['Keyboard Layout'].Map)
 
     def CallBackFunctions(self):
         # Menu bar
@@ -281,7 +286,7 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
 
         self.Device = None
 
-        self.data_send = '\x02\xff\x02'
+        self.data_send = bytes.fromhex('11ff')
         self.data_recv = None
         self.isRecv = False
 
@@ -316,6 +321,7 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
         self.lineEdit_VID.textChanged.connect(self.ParametersReload)
         self.lineEdit_PID.textChanged.connect(self.ParametersReload)
         self.lineEdit_Interface.textChanged.connect(self.ParametersReload)
+        self.lineEdit_SEND.textChanged.connect(self.ParametersReload)
 
     # ====================================================
 
@@ -349,6 +355,17 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
 
     def SendData(self):
         try:
+            # self.parent.subwins['Keyboard Layout'].Map
+            if self.data_send == bytes.fromhex('12 ff ff ff ff ff ff ff'):
+                print('save keyboard')
+                for key_num, keycode in self.parent.subwins['Keyboard Layout'].Map.items():
+                    r = key_num // 8
+                    c = key_num % 8
+                    data_str = f'12 {r:02x} {c:02x} {keycode:02x}'
+                    data = bytes.fromhex(data_str).ljust(8, b'\xff')
+                    # print(data)
+                    usbdriver.SendData(self.Device, self.ep_out, data)
+
             usbdriver.SendData(self.Device, self.ep_out, self.data_send)
             self.textBrowser_SEND.append(f'{self.data_send}')
         except Exception as e:
@@ -380,6 +397,8 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
             self.VID = self.transe2int(self.lineEdit_VID.text())
             self.PID = self.transe2int(self.lineEdit_PID.text())
             self.Interface_Number = self.transe2int(self.lineEdit_Interface.text())
+            self.data_send = bytes.fromhex(self.lineEdit_SEND.text()).ljust(8, b'\xff')
+            print(self.data_send)
             # self.VID = int(self.lineEdit_VID.text())
         except:
             pass
@@ -868,6 +887,7 @@ class Sub_KeyboardLayout(QWidget, Ui_Subui_KeyboardLayout):
             event.accept()
         else:
             event.ignore()
+
 
 if __name__ == '__main__':
     QtCore.QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling)  # 设置其窗口尺寸显示正常
