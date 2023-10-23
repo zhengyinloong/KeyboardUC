@@ -32,7 +32,7 @@ process.communicate(password.encode())
 # sudo -S python3 main.py
 class Worker(QObject):
     finished = pyqtSignal()
-    received_data = pyqtSignal(str)
+    received_data = pyqtSignal(list)
 
     def __init__(self, Device, ep_in):
         super().__init__()
@@ -50,10 +50,10 @@ class Worker(QObject):
                     for t, d in parsed_data.items():
                         output += f'{t}:{d}\n'
 
-                    self.received_data.emit(f'{output}')
+                    self.received_data.emit([data_recv, f'{output}'])
             except Exception as e:
                 # print(e)
-                self.received_data.emit(f'{e}')
+                self.received_data.emit([[], f'{e}'])
                 continue
                 # break
         self.finished.emit()
@@ -347,8 +347,11 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
         self.thread.wait()
         self.thread = None
 
-    @QtCore.pyqtSlot(str)
-    def updateTextBrowser(self, text):
+    @QtCore.pyqtSlot(list)
+    def updateTextBrowser(self, data_list):
+        data = data_list[0]
+        text = data_list[1]
+        self.lineEdit_RECEIVE.setText(f'{list(data)}')
         self.textBrowser_RECEIVE.append(text)
 
     # ======================================================
