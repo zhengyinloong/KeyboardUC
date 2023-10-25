@@ -3,5 +3,7 @@
 # zhengyinloong
 # 2023/10/17
 
-l = [[],'234']
-print(l,type(None))
+
+import subprocess
+
+subprocess.Popen('SecureCRT')

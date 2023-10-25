@@ -201,10 +201,10 @@ class Main(QMainWindow, Ui_MainWindow):
         self.subwins = {'USB': Sub_USB(self),
                         'BlueTooth': Sub_BlueTooth(self),
                         'Keyboard Layout': Sub_KeyboardLayout(self),
-                        'IAP': Sub_IAP(self)}
+                        # 'IAP': Sub_IAP(self),
+                        }
 
         self.resize(UI_WIDTH, UI_HEIGHT)
-        # print(self.subwins['Keyboard Layout'].Map)
 
     def CallBackFunctions(self):
         # Menu bar
@@ -221,8 +221,11 @@ class Main(QMainWindow, Ui_MainWindow):
         self.btn_IAP.clicked.connect(lambda: self.OpenSubWindow('IAP'))
 
     def OpenSubWindow(self, sub: str):
-        self.subwins[sub].show()
-        self.hide()
+        if sub == 'IAP':
+            subprocess.Popen('SecureCRT')
+        else:
+            self.subwins[sub].show()
+            self.hide()
 
     def ShowAbout(self):
         about_text = """

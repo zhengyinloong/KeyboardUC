@@ -11,6 +11,7 @@ import bluetooth
 def FindDevices():
     # # 扫描附近的蓝牙设备
     devices = bluetooth.discover_devices()
+    print(devices)
     return devices
 
 
