@@ -2,16 +2,11 @@
 # usbdriver.py in KeyboardUC
 # zhengyinloong
 # 2023/08/28 12:48
-
-import os
-
-os.environ['PYUSB_DEBUG'] = 'debug'
-
 import time
 
 import usb.core
 import usb.util
-import libusb
+
 import subprocess
 
 from config.settings import *
@@ -26,33 +21,38 @@ process.communicate(password.encode())
 # sudo -S python3 usbdriver.py
 def FindDevices():
     devs = usb.core.find(find_all=True)
-    # devs = libusb.open_device_with_vid_pid()
     return devs
 
 
 def FindDevice(vid, pid):
     dev = usb.core.find(idVendor=vid, idProduct=pid)  # USB\VID_0D00&PID_0721&REV_0100&MI_00
     if dev is not None:
-        # dev.set_configuration()
-        # if dev.is_kernel_driver_active(0):
-        #     print('detach kernel driver')
-        #     dev.detach_kernel_driver(0)
-        dev.reset()
-    # clear any junk in the read buffer - so that init cmds will send
+        # print(f'{dev}')
+        # print(dev)
+        print('Device Found, Attempting code...')
     return dev
 
 
 def ReadConfig(dev, interface_number=0, alternate_setting=0):
+    if dev.is_kernel_driver_active(interface_number) is True:
+        # tell the kernel to detach
+        # print('tell the kernel to detach')
+        dev.detach_kernel_driver(interface_number)
+        # claim the device
+        # print('claim the device')
+        usb.util.claim_interface(dev, interface_number)
     # 获取设备的配置
     dev_config = dev.get_active_configuration()
-
-    for interface in dev_config:
+    interface = None
+    for _interface in dev_config:
         # if interface.bInterfaceClass == usb.CLASS_HID and interface.bInterfaceNumber == interface_number:
-        if interface.bInterfaceNumber == interface_number:
-            # interface_number = interface.bInterfaceNumber
-            alternate_setting = interface.bAlternateSetting
+        if _interface.bInterfaceNumber == interface_number:
+            # interface_number = _interface.bInterfaceNumber
+            # alternate_setting = _interface.bAlternateSetting
+            # interface = dev_config[(interface_number, alternate_setting)]
+            interface = _interface
             break  # 找到 HID 类型的接口后退出循环
-    interface = dev_config[(interface_number, alternate_setting)]
+
     return dev_config, interface
 
 
@@ -71,26 +71,28 @@ def Endpoints(interface):
 
 
 def ReceiveData(device, endpoint_in):
-    # print(epin.bInterval)
     try:
-        print(f'trying receive data from endpoint {endpoint_in.bEndpointAddress}')
-        data = device.read(endpoint_in.bEndpointAddress, 64,5000)
-        print(f'{data}')
-        time.sleep(endpoint_in.bInterval / 1000)
-        # if data == b'\x01':
-        # data = device.read(endpoint_in.bEndpointAddress, 7)
+        data = device.read(endpoint_in.bEndpointAddress, endpoint_in.wMaxPacketSize,
+                           timeout=endpoint_in.bInterval)
+        # print(f'{data}')
         return data
-        # else:
-        #     return data
-        # return None
     except Exception as e:
-        print(e)
+        # print(e.args)
+        if e.args == ('Resource busy',):
+            time.sleep(1)
         return None
 
 
 def SendData(device, endpoint_out, data):
     data = data.encode()
     device.write(endpoint_out.bEndpointAddress, data)
+
+
+def ReleaseDevice(dev, interface_num):
+    # release the device
+    usb.util.release_interface(dev, interface_num)
+    # # reattach the device to the OS kernel
+    dev.attach_kernel_driver(interface_num)
 
 
 if __name__ == '__main__':
@@ -105,10 +107,10 @@ if __name__ == '__main__':
     # print(name, '\n', dev)
     # interface = ReadConfig(dev)[0]
     # print(interface)
-    # epin = interface[0]
-    # epout = interface[1]
-    # print(epin)
+    # epi = interface[0]
+    # pout = interface[1]
+    # print(epi)
 
-    # ReceiveData(dev,epin)
+    # ReceiveData(dev,epi)
     # data = 'hello'
-    # SendData(dev, epout, data)
+    # SendData(dev, pout, data)

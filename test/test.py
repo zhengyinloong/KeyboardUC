@@ -1,60 +1,65 @@
 # -*- coding: utf-8 -*-
+from array import array
 
+# b = b"Hello, World!"
+#
+# b1 = 'Hello, World!'.encode()
+# print(b,b1.decode())
 
-import serial
-import threading
-import datetime
-import queue
-from time import sleep
+a = array('B', [0, 0, 0, 255])
+'''
+鼠标发送给PC的数据每次4个字节
+BYTE1 BYTE2 BYTE3 BYTE4
+定义分别是：
+BYTE1 --
+       |--bit7:   1   表示   Y   坐标的变化量超出－256   ~   255的范围,0表示没有溢出
+       |--bit6:   1   表示   X   坐标的变化量超出－256   ~   255的范围，0表示没有溢出
+       |--bit5:   Y   坐标变化的符号位，1表示负数，即鼠标向下移动
+       |--bit4:   X   坐标变化的符号位，1表示负数，即鼠标向左移动
+       |--bit3:     恒为1
+       |--bit2:     1表示中键按下
+       |--bit1:     1表示右键按下
+       |--bit0:     1表示左键按下
+BYTE2 -- X坐标变化量，与byte的bit4组成9位符号数,负数表示向左移，正数表右移。用补码表示变化量
+BYTE3 -- Y坐标变化量，与byte的bit5组成9位符号数，负数表示向下移，正数表上移。用补码表示变化量
+BYTE4 -- 滚轮变化。
+'''
+useful = list(a)
+def parse_mouse_packet(packet):
+    byte1 = packet[0]
+    byte2 = packet[1]
+    byte3 = packet[2]
+    byte4 = packet[3]
 
+    x_overflow = (byte1 & 0b10000000) >> 7
+    y_overflow = (byte1 & 0b01000000) >> 6
+    y_negative = (byte1 & 0b00100000) >> 5
+    x_negative = (byte1 & 0b00010000) >> 4
+    middle_btn_pressed = (byte1 & 0b00000100) >> 2
+    right_btn_pressed = (byte1 & 0b00000010) >> 1
+    left_btn_pressed = byte1 & 0b00000001
 
-class Uart(object):
-    def __init__(self, port):
-        self.err = 0
-        self.run_status = 0
-        try:
-            self.uart = serial.Serial(port, 9600)
-            self.run_status = 1
-            print("start uart success")
-        except:
-            print("start uart error")
-            self.err = -1
+    # Calculate X coordinate change
+    x_change = byte2 if not x_negative else -(256 - byte2)
 
-    def uart_recv_thread(self):
-        print("start uart_recv_thread")
-        while True:
-            try:
-                print('trying')
-                data = self.uart.readline()
-                data = "[uart==>pc] " + data.decode()
-                print(data)
-                sleep(0.05)
-            except Exception as e:
-                print("Error")
-                print(e)
+    # Calculate Y coordinate change
+    y_change = byte3 if not y_negative else -(256 - byte3)
 
-    def run(self):
-        threading.Thread(target=self.uart_recv_thread, daemon=True).start()
+    # Get scroll wheel change
+    scroll_change = byte4
 
-    def close(self):
-        print("close uart")
-        self.uart.close()
+    return {
+        'x_overflow': bool(x_overflow),
+        'y_overflow': bool(y_overflow),
+        'x_negative': bool(x_negative),
+        'y_negative': bool(y_negative),
+        'middle_btn_pressed': bool(middle_btn_pressed),
+        'right_btn_pressed': bool(right_btn_pressed),
+        'left_btn_pressed': bool(left_btn_pressed),
+        'x_change': x_change,
+        'y_change': y_change,
+        'scroll_change': scroll_change
+    }
 
-    def uart_send_data(self, data):
-        print("pc==>uart: ", data)
-        self.uart.write(data.encode())
+print(parse_mouse_packet(useful))
 
-
-if __name__ == "__main__":
-    uart = Uart("COM11")
-    if -1 != uart.err:
-        uart.run()
-    while True:
-        input_data = 'input("Please input:\r\n")'
-        if "quit" == input_data:
-            uart.close()
-            break
-        else:
-            # uart.uart_send_data(input_data)
-            sleep(0.1)
-    print("exit uart")
