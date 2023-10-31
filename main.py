@@ -210,7 +210,7 @@ class Main(QMainWindow, Ui_MainWindow):
         # Menu bar
         self.actionQuit.triggered.connect(self.Quit)
         # self.actionSettings.triggered.connect(self.Quit)
-        self.actionHelp.triggered.connect(self.Quit)
+        # self.actionHelp.triggered.connect(self.Quit)
         self.actionAbout.triggered.connect(self.ShowAbout)
 
         # Buttons
@@ -559,6 +559,8 @@ class Sub_BlueTooth(QMainWindow, Ui_Subui_BlueTooth):
     def PrepParameters(self):
         self.Device = None
         self.Address = '14:DD:9C:BC:51:7C'
+        self.Font = QFont()
+        self.Font.setPixelSize(10)
 
     def PrepWidgets(self):
         self.lineEdit_Address.setText(str(self.Address))
