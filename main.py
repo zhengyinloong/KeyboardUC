@@ -10,6 +10,7 @@ from ui.sub_ui_usb import *
 from ui.sub_ui_bluetooth import *
 from ui.sub_ui_iap import *
 from ui.sub_ui_keyboard_layout import *
+from ui.sub_ui_audio import *
 from config.settings import *
 from user import usbdriver, bluetoothdriver
 import sys
@@ -20,8 +21,12 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QFontDialog,
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from PyQt5 import QtCore
 
-import subprocess
+import pyaudio
+import matplotlib.pyplot as plt
+import numpy as np
 
+
+import subprocess
 command = 'sudo -S chmod 777 */ -R'
 password = PASSWORD
 process = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE)
@@ -201,6 +206,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.subwins = {'USB': Sub_USB(self),
                         'BlueTooth': Sub_BlueTooth(self),
                         'Keyboard Layout': Sub_KeyboardLayout(self),
+                        'Audio': Sub_Audio(self),
                         # 'IAP': Sub_IAP(self),
                         }
 
@@ -219,6 +225,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.btn_BlueTooth.clicked.connect(lambda: self.OpenSubWindow('BlueTooth'))
         self.btn_KeyboardLayout.clicked.connect(lambda: self.OpenSubWindow('Keyboard Layout'))
         self.btn_IAP.clicked.connect(lambda: self.OpenSubWindow('IAP'))
+        self.btn_Audio.clicked.connect(lambda: self.OpenSubWindow('Audio'))
 
     def OpenSubWindow(self, sub: str):
         if sub == 'IAP':
@@ -810,6 +817,7 @@ class Sub_KeyboardLayout(QWidget, Ui_Subui_KeyboardLayout):
         # buttons init
         for bt_number in range(len(self.groupBox_Keyboard.children()[1:])):
             self.groupBox_Keyboard.children()[1 + bt_number].keyNumber = bt_number
+            # print(self.groupBox_Keyboard.children()[1 + bt_number].objectName(),bt_number)
             self.groupBox_Keyboard.children()[1 + bt_number].keyCode = None
             # self.groupBox_Keyboard.children()[1 + bt_number].setText('None')
         # keyboard_map
@@ -875,6 +883,97 @@ class Sub_KeyboardLayout(QWidget, Ui_Subui_KeyboardLayout):
             file.write(str(self.Map))
             file.close()
 
+    def Quit(self):
+        self.close()
+        # QCoreApplication.quit()
+        # QCoreApplication.exit(0)
+
+    def DoIfQuit(self):
+        # ============ ADD ===========
+        self.parent.show()
+        print(f'quit{self}')
+
+    def closeEvent(self, event):
+        # reply = QMessageBox.question(self, '确认', '确定要关闭窗口吗？', QMessageBox.Yes | QMessageBox.No,
+        #                              QMessageBox.No)
+        reply = QMessageBox.Yes
+        if reply == QMessageBox.Yes:
+            # 执行你自定义的操作，比如保存数据或清理资源
+            self.DoIfQuit()
+            event.accept()
+        else:
+            event.ignore()
+
+class Sub_Audio(QWidget, Ui_Subui_Audio):
+    def __init__(self, parent):
+        self.parent = parent
+        super(Sub_Audio, self).__init__()
+        self.setupUi(self)
+        # ============ ADD ====================
+
+        self.PrepOpen()  # 初始化参数和控件状态
+        self.CallBackFunctions()  # 各个控件的功能函数集
+
+    def PrepOpen(self):
+        self.resize(UI_WIDTH, UI_HEIGHT)
+
+        self.PrepParameters()
+        self.PrepWidgets()
+
+    def PrepParameters(self):
+        self.input_flag = False
+        self.output_flag = False
+        self.input_stream = None
+        self.out_stream = None
+
+    def PrepWidgets(self):
+        pass
+
+    def CallBackFunctions(self):
+        # button
+        # self.pushButton_MicrophoneTest.clicked.connect()
+        # self.pushButton_display.clicked.connect()
+        self.pushButton_MicrophoneTest.clicked.connect(self.InputTest)
+        pass
+
+    def InputTest(self):
+        self.input_flag = not self.input_flag
+        chunk = 512  # 缓冲区大小
+        format = pyaudio.paInt16  # 采样位数
+        channels = 1  # 声道数
+        rate = 44100  # 采样率
+        data = np.zeros(chunk, dtype=np.int16)
+
+        p = pyaudio.PyAudio()
+
+        stream = p.open(format=format,
+                        channels=channels,
+                        rate=rate,
+                        input=True,
+                        frames_per_buffer=chunk)
+
+        fig, ax = plt.subplots()
+        x = np.arange(0, 2 * chunk, 2)
+        ax.set_ylim(0, 100)
+        ax.set_xlim(0, chunk)
+        bar = ax.bar(1, 0, width=100)
+        plt.xlabel('Sample')
+        plt.ylabel('Amplitude')
+        volume = 0
+
+        while self.input_flag:
+            data = stream.read(chunk)
+            data_int = np.frombuffer(data, dtype=np.int16)
+            volume = max(data_int) * 100 / 32768
+            bar[0].set_height(volume)
+            fig.canvas.draw()
+            fig.canvas.flush_events()
+            fig.show()
+
+        plt.close()
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
     def Quit(self):
         self.close()
         # QCoreApplication.quit()

@@ -33,7 +33,7 @@
       <property name="minimumSize">
        <size>
         <width>80</width>
-        <height>80</height>
+        <height>30</height>
        </size>
       </property>
       <property name="text">
@@ -46,7 +46,7 @@
       <property name="minimumSize">
        <size>
         <width>80</width>
-        <height>80</height>
+        <height>30</height>
        </size>
       </property>
       <property name="text">
@@ -59,7 +59,7 @@
       <property name="minimumSize">
        <size>
         <width>80</width>
-        <height>80</height>
+        <height>30</height>
        </size>
       </property>
       <property name="text">
@@ -72,11 +72,24 @@
       <property name="minimumSize">
        <size>
         <width>80</width>
-        <height>80</height>
+        <height>30</height>
        </size>
       </property>
       <property name="text">
        <string>IAP</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="btn_Audio">
+      <property name="minimumSize">
+       <size>
+        <width>80</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Audio</string>
       </property>
      </widget>
     </item>
