@@ -22,11 +22,12 @@ from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from PyQt5 import QtCore
 
 import pyaudio
+import wave
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 import subprocess
+
 command = 'sudo -S chmod 777 */ -R'
 password = PASSWORD
 process = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE)
@@ -904,6 +905,7 @@ class Sub_KeyboardLayout(QWidget, Ui_Subui_KeyboardLayout):
         else:
             event.ignore()
 
+
 class Sub_Audio(QWidget, Ui_Subui_Audio):
     def __init__(self, parent):
         self.parent = parent
@@ -934,11 +936,13 @@ class Sub_Audio(QWidget, Ui_Subui_Audio):
         # self.pushButton_MicrophoneTest.clicked.connect()
         # self.pushButton_display.clicked.connect()
         self.pushButton_MicrophoneTest.clicked.connect(self.InputTest)
+        self.pushButton_display.clicked.connect(self.OutputTest)
         pass
 
     def InputTest(self):
-        self.input_flag = not self.input_flag
-        chunk = 512  # 缓冲区大小
+        # self.input_flag = not self.input_flag
+        self.input_flag = True
+        chunk = 1024  # 缓冲区大小
         format = pyaudio.paInt16  # 采样位数
         channels = 1  # 声道数
         rate = 44100  # 采样率
@@ -953,7 +957,8 @@ class Sub_Audio(QWidget, Ui_Subui_Audio):
                         frames_per_buffer=chunk)
 
         fig, ax = plt.subplots()
-        x = np.arange(0, 2 * chunk, 2)
+        # x = np.arange(0, 2 * chunk, 2)
+        # line, = ax.plot(x, np.random.rand(chunk), 'r')
         ax.set_ylim(0, 100)
         ax.set_xlim(0, chunk)
         bar = ax.bar(1, 0, width=100)
@@ -961,8 +966,60 @@ class Sub_Audio(QWidget, Ui_Subui_Audio):
         plt.ylabel('Amplitude')
         volume = 0
 
+        def handle_close(event):
+            self.input_flag = False
+            plt.close()
+            stream.stop_stream()
+            stream.close()
+            p.terminate()
+            # sys.exit(0)
+
+        fig.canvas.mpl_connect('close_event', handle_close)
         while self.input_flag:
             data = stream.read(chunk)
+            data_int = np.frombuffer(data, dtype=np.int16)
+            volume = max(data_int) * 100 / 32768
+            bar[0].set_height(volume)
+            # line.set_ydata(data_int)
+            fig.canvas.draw()
+            fig.canvas.flush_events()
+            fig.show()
+
+    def OutputTest(self):
+        self.output_flag = not self.output_flag
+        chunk = 1024  # 缓冲区大小
+        p = pyaudio.PyAudio()
+        wf = wave.open('/home/loong/KeyboardUC/test/test.wav', 'rb')
+        # 获取wav文件参数元组(nchannels, sampwidth, framerate, nframes, comptype, compname)
+        params = wf.getparams()
+        # 打开音频流
+        stream = p.open(channels=params[0],
+                        format=params[1],
+                        rate=params[2],
+                        output=True)
+
+        fig, ax = plt.subplots()
+        # x = np.arange(0, 2 * chunk, 2)
+        ax.set_ylim(0, 100)
+        ax.set_xlim(0, chunk)
+        bar = ax.bar(1, 0, width=100)
+        plt.xlabel('Sample')
+        plt.ylabel('Amplitude')
+        volume = 0
+
+        def handle_close(event):
+            self.output_flag = False
+            plt.close()
+            stream.stop_stream()
+            stream.close()
+            p.terminate()
+
+        fig.canvas.mpl_connect('close_event', handle_close)
+        while self.output_flag:
+            data = wf.readframes(1024)
+            if not data:
+                break
+            stream.write(data)
             data_int = np.frombuffer(data, dtype=np.int16)
             volume = max(data_int) * 100 / 32768
             bar[0].set_height(volume)
@@ -970,10 +1027,6 @@ class Sub_Audio(QWidget, Ui_Subui_Audio):
             fig.canvas.flush_events()
             fig.show()
 
-        plt.close()
-        stream.stop_stream()
-        stream.close()
-        p.terminate()
     def Quit(self):
         self.close()
         # QCoreApplication.quit()

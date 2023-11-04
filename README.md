@@ -17,8 +17,8 @@ sudo adduser <username> plugdev
 
 + usb test:
   + mouse test
-    + test ![test](resources/usbtest.png)
-      + left button ![mouse test left button](resources/usb_mouse_test_left_btn.png)
-      + scroll ![mouse test scroll](resources/receive_mouse_data.png)
+    + test ![test](resources/imgs/usbtest.png)
+      + left button ![mouse test left button](resources/imgs/usb_mouse_test_left_btn.png)
+      + scroll ![mouse test scroll](resources/imgs/receive_mouse_data.png)
   + keyboard test
-    + interface ![keyboard interface](resources/keyboradInterface.png)
+    + interface ![keyboard interface](resources/imgs/keyboradInterface.png)
