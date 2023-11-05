@@ -263,6 +263,7 @@ KEY_BOARD_CODES = {
     55: "7",
     56: "8",
     57: "9",
+    # 数字小键盘
     0x60: "NUM0",
     0x61: "NUM1",
     0x62: "NUM2",
@@ -273,12 +274,12 @@ KEY_BOARD_CODES = {
     0x67: "NUM7",
     0x68: "NUM8",
     0x69: "NUM9",
-    0x6A: "*",
-    0x6B: "+",
+    0x6A: "NUM*",
+    0x6B: "NUM+",
     0x6C: "NUM ENTER",
-    0x6D: "–",
-    0x6E: ".",
-    0x6F: "/",
+    0x6D: "NUM–",
+    0x6E: "NUM.",
+    0x6F: "NUM/",
     # 功能键键码值 F1～F16
     0x70: "F1",
     0x71: "F2",
@@ -305,7 +306,7 @@ KEY_NAMES = ['MOUSE LEFT', 'MOUSE RIGHT', 'CANCEL', 'MOUSE MID', 'BACKSPACE', 'T
              'NUM5', 'NUM6', 'NUM7', 'NUM8', 'NUM9', '*', '+', 'NUM ENTER', '–', '.', '/', 'F1', 'F2', 'F3', 'F4', 'F5',
              'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13', 'F14', 'F15', 'F16']
 
-_KEY_BOARD_CODES = {'MOUSE LEFT': 1, 'MOUSE RIGHT': 2, 'CANCEL': 3, 'MOUSE MID': 4, 'BACKSPACE': 8, 'TAB': 9, 'CLEAR': 12,
+KEY_BOARD_CODES_ = {'MOUSE LEFT': 1, 'MOUSE RIGHT': 2, 'CANCEL': 3, 'MOUSE MID': 4, 'BACKSPACE': 8, 'TAB': 9, 'CLEAR': 12,
                     'ENTER': 13, 'SHIFT': 16, 'CTRL': 17, 'ALT': 18, 'PAUSE': 19, 'CAPSLOCK': 20, 'ESC': 27, 'SPACE': 32,
                     'PAGE UP': 33, 'PAGE DOWN': 34, 'END': 35, 'HOME': 36, 'LEFT ARROW': 37, 'UP ARROW': 38, 'RIGHT ARROW': 39,
                     'DOWN ARROW': 40, 'SELECT': 41, 'PRINT SCREEN': 42, 'EXECUTE': 43, 'SNAPSHOT': 44, 'INSERT': 45, 'DELETE': 46,
@@ -321,13 +322,13 @@ _KEY_BOARD_CODES = {'MOUSE LEFT': 1, 'MOUSE RIGHT': 2, 'CANCEL': 3, 'MOUSE MID':
 KEY_NAMES = []
 for n in KEY_BOARD_CODES.values():
     KEY_NAMES.append(n)
-_KEY_BOARD_CODES = {}
+KEY_BOARD_CODES_ = {}
 for it in KEY_BOARD_CODES.items():
     # print(it)
-    _KEY_BOARD_CODES[it[1]] = it[0]
+    KEY_BOARD_CODES_[it[1]] = it[0]
 print(KEY_NAMES)
-print(_KEY_BOARD_CODES)
+print(KEY_BOARD_CODES_)
 
 print(len(KEY_NAMES))
-print(len(_KEY_BOARD_CODES))
+print(len(KEY_BOARD_CODES_))
 print(len(KEY_BOARD_CODES))

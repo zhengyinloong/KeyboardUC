@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # with语句块保证文件在使用结束后会被正确地关闭
-with wave.open('/home/loong/KeyboardUC/test/test.wav', 'rb') as wf:
+with wave.open('/home/loong/KeyboardUC/resources/audio/test.wav', 'rb') as wf:
     # 实例化一个PyAudio对象，并初始化PortAudio系统资源
     p = pyaudio.PyAudio()
 

@@ -861,7 +861,7 @@ class Sub_KeyboardLayout(QWidget, Ui_Subui_KeyboardLayout):
         self.lineEdit_KeyCode.setText(str(self.currentPressedKey.keyCode))
 
         self.currentPressedKey.setText(self.comboBox_KeyName.currentText())
-        print(self.currentPressedKey.keyCode)
+        # print(self.currentPressedKey.keyCode)
 
         self.Map[self.currentPressedKey.keyNumber] = self.currentPressedKey.keyCode
 
@@ -880,8 +880,19 @@ class Sub_KeyboardLayout(QWidget, Ui_Subui_KeyboardLayout):
             self.groupBox_Keyboard.children()[1 + bt_number].setText(KEY_BOARD_CODES[keyCode])
 
     def SaveMap(self):
+        bin_data = b''
+        for key_num, keycode in self.Map.items():
+            r = key_num // 8
+            c = key_num % 8
+            data_str = f'12 {r:02x} {c:02x} {keycode:02x}'
+            data = bytes.fromhex(data_str).ljust(8, b'\xff')
+            bin_data += data
         with open('./config/keyboard_map.txt', 'w') as file:
             file.write(str(self.Map))
+            file.close()
+        with open('./config/keyboard_map.bin', 'wb') as file:
+            print(bin_data)
+            file.write(bin_data)
             file.close()
 
     def Quit(self):
@@ -989,7 +1000,7 @@ class Sub_Audio(QWidget, Ui_Subui_Audio):
         self.output_flag = not self.output_flag
         chunk = 1024  # 缓冲区大小
         p = pyaudio.PyAudio()
-        wf = wave.open('/home/loong/KeyboardUC/test/test.wav', 'rb')
+        wf = wave.open('./resources/audio/test.wav', 'rb')
         # 获取wav文件参数元组(nchannels, sampwidth, framerate, nframes, comptype, compname)
         params = wf.getparams()
         # 打开音频流
@@ -1016,7 +1027,7 @@ class Sub_Audio(QWidget, Ui_Subui_Audio):
 
         fig.canvas.mpl_connect('close_event', handle_close)
         while self.output_flag:
-            data = wf.readframes(1024)
+            data = wf.readframes(chunk)
             if not data:
                 break
             stream.write(data)

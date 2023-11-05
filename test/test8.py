@@ -1,20 +1,8 @@
-# -*- coding: UTF-8 -*-
-# settings.py
-# Description:
+# -*- coding:utf-8 -*-
+# test8.py in KeyboardUC
 # zhengyinloong
-# 2023/9/2 下午2:22
-# Copyright：©2020-2023 zhengyinloong
+# 2023/11/5
 
-UI_WIDTH = 800
-UI_HEIGHT = 600
-
-PASSWORD = '123456'
-
-VENDOR_ID = 0x0d00  # GD32-USB_Keyboard / mouse VID
-PRODUCT_ID = 0x0721  # GD32-USB_Keyboard / mouse PID
-
-# VENDOR_ID = 0x1a86  # GD32-USB_Keyboard / I2C VID
-# PRODUCT_ID = 0x5512  # GD32-USB_Keyboard / I2C PID
 
 KEY_BOARD_CODES = {
     0x00: 'Reserved',
@@ -205,7 +193,7 @@ KEY_NAMES = ['Reserved', 'ErrorRollOver', 'POSTFail', 'ErrorUndefined', 'A', 'B'
              'LANG2', 'LANG3', 'LANG4', 'LANG5', 'LANG6', 'LANG7', 'LANG8', 'LANG9', 'AlternateErase', 'SysReq/Attention', 'Cancel', 'Clear', 'Prior',
              'Return', 'Separator', 'Out', 'Oper', 'Clear/Again', 'CrSel/Props', 'ExSel', 'LeftControl', 'LeftShift', 'LeftAlt', 'LeftGUI',
              'RightControl', 'RightShift', 'RightAlt', 'RightGUI', 'Undefined']
-KEY_BOARD_CODES_ = {'Reserved': 0, 'ErrorRollOver': 1, 'POSTFail': 2, 'ErrorUndefined': 3, 'A': 4, 'B': 5, 'C': 6, 'D': 7, 'E': 8, 'F': 9, 'G': 10,
+_KEY_BOARD_CODES = {'Reserved': 0, 'ErrorRollOver': 1, 'POSTFail': 2, 'ErrorUndefined': 3, 'A': 4, 'B': 5, 'C': 6, 'D': 7, 'E': 8, 'F': 9, 'G': 10,
                     'H': 11, 'I': 12, 'J': 13, 'K': 14, 'L': 15, 'M': 16, 'N': 17, 'O': 18, 'P': 19, 'Q': 20, 'R': 21, 'S': 22, 'T': 23, 'U': 24,
                     'V': 25, 'W': 26, 'X': 27, 'Y': 28, 'Z': 29, '1 !': 30, '2 @': 31, '3 #': 32, '4 $': 33, '5 %': 34, '6 ^': 35, '7 &': 36,
                     '8 *': 37, '9 (': 38, '0 )': 39, 'Enter': 40, 'Esc': 41, 'Backspace': 42, 'Tab': 43, 'Space': 44, '- _': 45, '= +': 46, '[ {': 47,
@@ -226,4 +214,16 @@ KEY_BOARD_CODES_ = {'Reserved': 0, 'ErrorRollOver': 1, 'POSTFail': 2, 'ErrorUnde
                     'Clear/Again': 162, 'CrSel/Props': 163, 'ExSel': 164, 'LeftControl': 224, 'LeftShift': 225, 'LeftAlt': 226, 'LeftGUI': 227,
                     'RightControl': 228, 'RightShift': 229, 'RightAlt': 230, 'RightGUI': 231, 'Undefined': 255}
 
+KEY_NAMES = []
+for n in KEY_BOARD_CODES.values():
+    KEY_NAMES.append(n)
+_KEY_BOARD_CODES = {}
+for it in KEY_BOARD_CODES.items():
+    # print(it)
+    _KEY_BOARD_CODES[it[1]] = it[0]
+print(KEY_NAMES)
+print(_KEY_BOARD_CODES)
 
+print(len(KEY_NAMES))
+print(len(_KEY_BOARD_CODES))
+print(len(KEY_BOARD_CODES))

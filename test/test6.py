@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import wave
 
+wave_file_path = '/home/loong/KeyboardUC/resources/audio/test.wav'
 chunk = 1024  # 缓冲区大小
 format = pyaudio.paInt16  # 采样位数
 channels = 1  # 声道数
@@ -72,7 +73,7 @@ while input_flag:
     fig.canvas.flush_events()
     fig.show()
 
-save_wave_file('test.wav', wave_data)
+save_wave_file(wave_file_path, wave_data)
 
 plt.close()
 stream.stop_stream()
