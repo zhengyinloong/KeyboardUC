@@ -158,7 +158,7 @@ class Ui_Subui_USB(object):
 
     def retranslateUi(self, Subui_USB):
         _translate = QtCore.QCoreApplication.translate
-        Subui_USB.setWindowTitle(_translate("Subui_USB", "USB"))
+        Subui_USB.setWindowTitle(_translate("Subui_USB", "USB/I2C"))
         self.groupBox_Device.setTitle(_translate("Subui_USB", "Device"))
         self.label_VID.setText(_translate("Subui_USB", "VID"))
         self.label_PID.setText(_translate("Subui_USB", "PID"))

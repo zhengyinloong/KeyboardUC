@@ -1,20 +1,18 @@
 # -*- coding: UTF-8 -*-
-# settings.py
-# Description:
+# settings.py in KeyboardUC
 # zhengyinloong
-# 2023/9/2 下午2:22
-# Copyright：©2020-2023 zhengyinloong
+# 2023/9/2
 
 UI_WIDTH = 800
 UI_HEIGHT = 600
 
-PASSWORD = '123456'
+PASSWORD = '123456'  # ubuntu
 
-VENDOR_ID = 0x0d00  # GD32-USB_Keyboard / mouse VID
-PRODUCT_ID = 0x0721  # GD32-USB_Keyboard / mouse PID
+# VENDOR_ID = 0x0d00  # GD32-USB_Keyboard / mouse VID
+# PRODUCT_ID = 0x0721  # GD32-USB_Keyboard / mouse PID
 
-# VENDOR_ID = 0x1a86  # GD32-USB_Keyboard / I2C VID
-# PRODUCT_ID = 0x5512  # GD32-USB_Keyboard / I2C PID
+VENDOR_ID = 0x1a86  # GD32-USB_Keyboard / I2C VID
+PRODUCT_ID = 0x5512  # GD32-USB_Keyboard / I2C PID
 
 KEY_BOARD_CODES = {
     0x00: 'Reserved',
@@ -225,5 +223,3 @@ KEY_BOARD_CODES_ = {'Reserved': 0, 'ErrorRollOver': 1, 'POSTFail': 2, 'ErrorUnde
                     'SysReq/Attention': 154, 'Cancel': 155, 'Clear': 156, 'Prior': 157, 'Return': 158, 'Separator': 159, 'Out': 160, 'Oper': 161,
                     'Clear/Again': 162, 'CrSel/Props': 163, 'ExSel': 164, 'LeftControl': 224, 'LeftShift': 225, 'LeftAlt': 226, 'LeftGUI': 227,
                     'RightControl': 228, 'RightShift': 229, 'RightAlt': 230, 'RightGUI': 231, 'Undefined': 255}
-
-

@@ -10,10 +10,8 @@ import bluetooth
 
 def FindDevices():
     # # 扫描附近的蓝牙设备
-    devices = bluetooth.discover_devices()
-    print(devices)
+    devices = bluetooth.discover_devices(duration=15, lookup_names=True)
     return devices
-
 
 def ConnectDevice(device_address):
     # 选择要连接的蓝牙设备

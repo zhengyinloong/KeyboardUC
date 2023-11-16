@@ -34,8 +34,6 @@ process = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE)
 process.communicate(password.encode())
 
 
-# sudo chmod 777 */ -R
-# sudo -S python3 main.py
 class Worker(QObject):
     finished = pyqtSignal()
     received_data = pyqtSignal(list)
@@ -411,7 +409,8 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
             self.VID = self.transe2int(self.lineEdit_VID.text())
             self.PID = self.transe2int(self.lineEdit_PID.text())
             self.Interface_Number = self.transe2int(self.lineEdit_Interface.text())
-            self.data_send = bytes.fromhex(self.lineEdit_SEND.text()).ljust(8, b'\xff')
+            # self.data_send = bytes.fromhex(self.lineEdit_SEND.text()).ljust(8, b'\xff')
+            self.data_send = bytes.fromhex(self.lineEdit_SEND.text())
             print(self.data_send)
             # self.VID = int(self.lineEdit_VID.text())
         except:
@@ -560,13 +559,12 @@ class Sub_BlueTooth(QMainWindow, Ui_Subui_BlueTooth):
 
     def PrepOpen(self):
         self.resize(UI_WIDTH, UI_HEIGHT)
-
         self.PrepParameters()
         self.PrepWidgets()
 
     def PrepParameters(self):
         self.Device = None
-        self.Address = '14:DD:9C:BC:51:7C'
+        self.Address = 'B0:D2:78:76:6C:FF'
         self.Font = QFont()
         self.Font.setPixelSize(10)
 
@@ -621,17 +619,13 @@ class Sub_BlueTooth(QMainWindow, Ui_Subui_BlueTooth):
                 widget.setFont(self.Font)
 
     def FindDevices(self):
-        self.textBrowser_RECEIVE.append(f"Searching for devices, please wait ...")
         try:
-            devs = bluetoothdriver.FindDevices()
-            if devs:
-                count = 0
-                for device in devs:
-                    count += 1
-                self.textBrowser_RECEIVE.append(f"FIND {count} DEVICES")
-                for dev in iter(devs):
-                    name = bluetooth.lookup_name(dev)
-                    self.textBrowser_RECEIVE.append(f"{dev} : {name}")
+            self.textBrowser_RECEIVE.append(f"Searching for devices, please wait ...")
+            nearby_devices = bluetoothdriver.FindDevices()
+            if nearby_devices:
+                self.textBrowser_RECEIVE.append(f"FIND {len(nearby_devices)} DEVICES")
+                for addr, name in nearby_devices:
+                    self.textBrowser_RECEIVE.append(f"{addr} : {name}")
         except Exception as e:
             self.textBrowser_RECEIVE.append(f"NOT FOUND")
             self.textBrowser_RECEIVE.append(f"Error:{e}")
@@ -650,7 +644,6 @@ class Sub_BlueTooth(QMainWindow, Ui_Subui_BlueTooth):
             self.Device = self.lastDevice
             self.textBrowser_RECEIVE.append(f'({self.Address}) NOT FOUND')
             self.textBrowser_RECEIVE.append(f'Error:{e}')
-
         pass
 
     def ReadConfig(self):
