@@ -29,10 +29,10 @@ import numpy as np
 
 import subprocess
 
-command = 'sudo -S chmod 777 */ -R'
-password = PASSWORD
-process = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE)
-process.communicate(password.encode())
+# command = 'sudo -S chmod 777 */ -R'
+# password = PASSWORD
+# process = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE)
+# process.communicate(password.encode())
 
 
 class Worker(QObject):

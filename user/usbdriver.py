@@ -11,11 +11,11 @@ import subprocess
 
 from config.settings import *
 
-command = 'sudo -S chmod 777 */ -R'
-password = PASSWORD
-
-process = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE)
-process.communicate(password.encode())
+# command = 'sudo -S chmod 777 */ -R'
+# password = PASSWORD
+#
+# process = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE)
+# process.communicate(password.encode())
 
 # sudo -S python3 usbdriver.py
 def FindDevices():
