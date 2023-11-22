@@ -17,7 +17,6 @@ password = PASSWORD
 process = subprocess.Popen(command, shell=True, stdin=subprocess.PIPE)
 process.communicate(password.encode())
 
-
 # sudo -S python3 usbdriver.py
 def FindDevices():
     devs = usb.core.find(find_all=True)
@@ -59,25 +58,32 @@ def ReadConfig(dev, interface_number=0, alternate_setting=0):
 def Endpoints(interface):
     ep_in = None
     ep_out = None
+    # print(interface)
     for ep in interface:
         if usb.util.endpoint_direction(ep.bEndpointAddress) == usb.util.ENDPOINT_IN:
             # print(ep)
             ep_in = ep
+            continue
         if usb.util.endpoint_direction(ep.bEndpointAddress) == usb.util.ENDPOINT_OUT:
             # print(ep)
             ep_out = ep
+            continue
 
     return ep_in, ep_out
 
 
 def ReceiveData(device, endpoint_in):
     try:
-        data = device.read(endpoint_in.bEndpointAddress, endpoint_in.wMaxPacketSize,
-                           timeout=endpoint_in.bInterval)
-        # print(f'{data}')
+        data = device.read(endpoint_in.bEndpointAddress,
+                           endpoint_in.wMaxPacketSize,
+                           timeout=endpoint_in.bInterval,
+                           # timeout=10
+                           )
+        # print(f'1 {data}')
         return data
     except Exception as e:
         # print(e.args)
+        # print(f'1 {e}')
         if e.args == ('Resource busy',):
             time.sleep(1)
         return None

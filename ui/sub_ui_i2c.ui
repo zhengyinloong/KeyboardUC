@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Subui_USB</class>
- <widget class="QMainWindow" name="Subui_USB">
+ <class>Subui_I2C</class>
+ <widget class="QMainWindow" name="Subui_I2C">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>USB</string>
+   <string>I2C(CH341T)</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_5">
@@ -120,12 +120,29 @@
         <widget class="QLineEdit" name="lineEdit_RECEIVE"/>
        </item>
        <item row="1" column="1">
-        <widget class="QLineEdit" name="lineEdit_SEND"/>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>cmd</string>
+         </property>
+        </widget>
        </item>
-       <item row="2" column="0">
+       <item row="1" column="2">
+        <widget class="QLineEdit" name="lineEdit_SEND_1"/>
+       </item>
+       <item row="2" column="0" rowspan="2">
         <widget class="QTextBrowser" name="textBrowser_RECEIVE"/>
        </item>
        <item row="2" column="1">
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>data</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="2">
+        <widget class="QLineEdit" name="lineEdit_SEND_2"/>
+       </item>
+       <item row="3" column="1" colspan="2">
         <widget class="QTextBrowser" name="textBrowser_SEND"/>
        </item>
       </layout>

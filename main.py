@@ -7,6 +7,7 @@ import bluetooth
 import usb
 from ui.main_ui import *
 from ui.sub_ui_usb import *
+from ui.sub_ui_i2c import *
 from ui.sub_ui_bluetooth import *
 from ui.sub_ui_iap import *
 from ui.sub_ui_keyboard_layout import *
@@ -48,6 +49,7 @@ class Worker(QObject):
         while self.isRecv:
             try:
                 data_recv = usbdriver.ReceiveData(self.Device, self.ep_in)
+                # print(f'2 {data_recv}')
                 if data_recv is not None:
                     parsed_data = self.ParsingData(data_recv)
                     output = ''
@@ -168,7 +170,7 @@ class Worker(QObject):
                 elif code == 0x03:
                     usage_key[usage_key_num] = 'Unknown Error'
                 else:
-                    usage_key[usage_key_num] = code
+                    usage_key[usage_key_num] = f'{hex(code)} {KEY_BOARD_CODES[code]}'
 
             return {
                 'code': data,
@@ -204,6 +206,7 @@ class Main(QMainWindow, Ui_MainWindow):
     def PrepOpen(self):
         self.subwins = {'USB': Sub_USB(self),
                         'BlueTooth': Sub_BlueTooth(self),
+                        'I2C': Sub_I2C(self),
                         'Keyboard Layout': Sub_KeyboardLayout(self),
                         'Audio': Sub_Audio(self),
                         # 'IAP': Sub_IAP(self),
@@ -222,6 +225,7 @@ class Main(QMainWindow, Ui_MainWindow):
 
         self.btn_USB.clicked.connect(lambda: self.OpenSubWindow('USB'))
         self.btn_BlueTooth.clicked.connect(lambda: self.OpenSubWindow('BlueTooth'))
+        self.btn_I2C.clicked.connect(lambda: self.OpenSubWindow('I2C'))
         self.btn_KeyboardLayout.clicked.connect(lambda: self.OpenSubWindow('Keyboard Layout'))
         self.btn_IAP.clicked.connect(lambda: self.OpenSubWindow('IAP'))
         self.btn_Audio.clicked.connect(lambda: self.OpenSubWindow('Audio'))
@@ -290,7 +294,7 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
         # self.PID = 0x0017
         self.VID = VENDOR_ID
         self.PID = PRODUCT_ID
-        self.Interface_Number = 0x00
+        self.Interface_Number = 0x02
         self.Alternate_setting = 0x00
 
         self.Device = None
@@ -369,7 +373,7 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
         try:
             # self.parent.subwins['Keyboard Layout'].Map
             if self.data_send == bytes.fromhex('12 ff ff ff ff ff ff ff'):
-                print('save keyboard')
+                # print('save keyboard')
                 for key_num, keycode in self.parent.subwins['Keyboard Layout'].Map.items():
                     r = key_num // 8
                     c = key_num % 8
@@ -406,18 +410,18 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
 
     def ParametersReload(self):
         try:
-            self.VID = self.transe2int(self.lineEdit_VID.text())
-            self.PID = self.transe2int(self.lineEdit_PID.text())
-            self.Interface_Number = self.transe2int(self.lineEdit_Interface.text())
-            # self.data_send = bytes.fromhex(self.lineEdit_SEND.text()).ljust(8, b'\xff')
-            self.data_send = bytes.fromhex(self.lineEdit_SEND.text())
-            print(self.data_send)
+            self.VID = self.trans2int(self.lineEdit_VID.text())
+            self.PID = self.trans2int(self.lineEdit_PID.text())
+            self.Interface_Number = self.trans2int(self.lineEdit_Interface.text())
+            self.data_send = bytes.fromhex(self.lineEdit_SEND.text()).ljust(8, b'\xff')
+            # self.data_send = bytes.fromhex(self.lineEdit_SEND.text())
+            # print(self.data_send)
             # self.VID = int(self.lineEdit_VID.text())
         except:
             pass
 
     @staticmethod
-    def transe2int(num_str: str):
+    def trans2int(num_str: str):
         if ('x' in num_str) or ('X' in num_str):
             num = int(num_str, 16)
         else:
@@ -522,7 +526,8 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
             try:
                 usbdriver.ReleaseDevice(self.Device, self.Interface_Number)
             except Exception as e:
-                print(f'{e}')
+                # print(f'{e}')
+                pass
 
     def Quit(self):
         self.close()
@@ -533,7 +538,292 @@ class Sub_USB(QMainWindow, Ui_Subui_USB):
         # ============ ADD ===========
         self.ReleaseDevice()
         self.parent.show()
-        print(f'quit{self}')
+        # print(f'quit{self}')
+
+    def closeEvent(self, event):
+        # reply = QMessageBox.question(self, '确认', '确定要关闭窗口吗？', QMessageBox.Yes | QMessageBox.No,
+        #                              QMessageBox.No)
+        reply = QMessageBox.Yes
+        if reply == QMessageBox.Yes:
+            # 执行你自定义的操作，比如保存数据或清理资源
+            self.DoIfQuit()
+            event.accept()
+        else:
+            event.ignore()
+
+
+class Sub_I2C(QMainWindow, Ui_Subui_I2C):
+    def __init__(self, parent):
+        self.parent = parent
+        super(Sub_I2C, self).__init__()
+        self.setupUi(self)
+        # ============ ADD ====================
+
+        self.PrepOpen()  # 初始化参数和控件状态
+        self.CallBackFunctions()  # 各个控件的功能函数集
+
+    def PrepOpen(self):
+        self.resize(UI_WIDTH, UI_HEIGHT)
+
+        self.PrepParameters()
+        self.PrepWidgets()
+
+    def PrepParameters(self):
+
+        self.worker = None
+        self.thread = None
+
+        self.Font = QFont()
+        self.Font.setPixelSize(10)
+
+        # self.VID = 0x0D00
+        # self.PID = 0x0721
+        # self.VID = 0x258A
+        # self.PID = 0x0017
+        self.VID = VENDOR_ID_CH341
+        self.PID = PRODUCT_ID_CH341
+        self.Interface_Number = 0x00
+        self.Alternate_setting = 0x00
+
+        self.Device = None
+
+        self.data_send = bytes.fromhex('')
+        self.i2c_init = bytes.fromhex('AA6000')
+        self.data_recv = None
+        self.isRecv = False
+
+    def PrepWidgets(self):
+
+        self.lineEdit_VID.setText(str(self.VID))
+        self.lineEdit_PID.setText(str(self.PID))
+        self.lineEdit_Interface.setText(str(self.Interface_Number))
+
+        self.textBrowser_RECEIVE.setFont(self.Font)
+        self.textBrowser_SEND.setFont(self.Font)
+
+    def CallBackFunctions(self):
+
+        # Menu bar
+        self.actionFonts.triggered.connect(lambda: self.SetFonts([
+            self.textBrowser_RECEIVE,
+            self.textBrowser_SEND]))
+        self.actionQuit.triggered.connect(self.Quit)
+        # Buttons
+        self.pushButton_FindDevices.clicked.connect(self.FindDevices)
+        self.pushButton_ConnectDevice.clicked.connect(self.ConnectDevice)
+        self.pushButton_ReadConfig.clicked.connect(self.ReadConfig)
+        self.pushButton_SendData.clicked.connect(self.SendData)
+        # self.pushButton_ReceiveData.clicked.connect(self.ReceiveData)
+        self.pushButton_ReceiveData.clicked.connect(self.onReceiveDataClicked)
+        # self.pushButton_Stop.clicked.connect(self.ReceiveData)
+
+        self.pushButton_Clear.clicked.connect(self.ClearHistory)
+
+        # Changes
+        self.lineEdit_VID.textChanged.connect(self.ParametersReload)
+        self.lineEdit_PID.textChanged.connect(self.ParametersReload)
+        self.lineEdit_Interface.textChanged.connect(self.ParametersReload)
+        self.lineEdit_SEND_1.textChanged.connect(self.ParametersReload)
+        self.lineEdit_SEND_2.textChanged.connect(self.ParametersReload)
+
+    # ====================================================
+
+    def onReceiveDataClicked(self):
+        if not self.worker:
+            self.worker = Worker(self.Device, self.ep_in)
+            self.worker.received_data.connect(self.updateTextBrowser)
+            self.worker.finished.connect(self.onWorkerFinished)
+
+            self.thread = QThread()
+            self.worker.moveToThread(self.thread)
+
+            self.thread.started.connect(self.worker.ReceiveData)
+            self.thread.start()
+
+        self.worker.isRecv = not self.worker.isRecv
+        self.pushButton_ReceiveData.setText('Stop' if self.worker.isRecv else 'Receive data')
+        self.textBrowser_RECEIVE.append('Receive data' if self.worker.isRecv else 'Stop')
+
+    def onWorkerFinished(self):
+        self.worker = None
+        self.thread.quit()
+        self.thread.wait()
+        self.thread = None
+
+    @QtCore.pyqtSlot(list)
+    def updateTextBrowser(self, data_list):
+        data = data_list[0]
+        text = data_list[1]
+        self.lineEdit_RECEIVE.setText(f'{list(data)}')
+        self.textBrowser_RECEIVE.append(text)
+
+    # ======================================================
+
+    def SendData(self):
+        try:
+            usbdriver.SendData(self.Device, self.ep_out, self.i2c_init)
+            usbdriver.SendData(self.Device, self.ep_out, self.data_send)
+            # self.textBrowser_SEND.append(f'{self.data_send}')
+            # self.data_recv = usbdriver.ReceiveData(self.Device, self.ep_in)
+            # print(f'data recv {self.data_recv}')
+        except Exception as e:
+            # print(e)
+            self.textBrowser_SEND.append(f'{e}')
+
+    def ClearHistory(self):
+
+        self.textBrowser_RECEIVE.clear()
+        self.textBrowser_SEND.clear()
+
+    def ParametersReload(self):
+        try:
+            self.VID = self.trans2int(self.lineEdit_VID.text())
+            self.PID = self.trans2int(self.lineEdit_PID.text())
+            self.Interface_Number = self.trans2int(self.lineEdit_Interface.text())
+
+            # aa4a4a74837202ff748173c0c07500
+            self.data_send = (bytes.fromhex('aa4a4a74') +
+                              bytes.fromhex(
+                                  hex(len(bytes.fromhex(self.lineEdit_SEND_1.text()) + bytes.fromhex(self.lineEdit_SEND_2.text())) + 0x81)[2:] + '72') +
+                              bytes.fromhex(self.lineEdit_SEND_1.text()) +
+                              bytes.fromhex(self.lineEdit_SEND_2.text()) +
+                              bytes.fromhex('748173c0c87500'))
+            # print(bytes.fromhex('aa4a4a74837202ff748173c0c87500'))
+            # self.data_send = bytes.fromhex(self.lineEdit_SEND.text())
+            # print(self.data_send)
+            # self.VID = int(self.lineEdit_VID.text())
+        except:
+            pass
+
+    @staticmethod
+    def trans2int(num_str: str):
+        if ('x' in num_str) or ('X' in num_str):
+            num = int(num_str, 16)
+        else:
+            num = int(num_str)
+        return num
+
+    def SetFonts(self, widgets):
+        font, ok = QFontDialog.getFont()
+        if ok:
+            # for widget_ in widget.findChildren():
+            self.Font = font
+        if widgets:
+            for widget in widgets:
+                widget.setFont(self.Font)
+
+    def FindDevices(self):
+        try:
+            devs = usbdriver.FindDevices()
+            if devs:
+                count = 0
+                for device in usbdriver.FindDevices():
+                    count += 1
+                self.textBrowser_RECEIVE.append(f"FIND {count} DEVICES")
+                for dev in usbdriver.FindDevices():
+                    try:
+                        dev_id = f'{dev.idVendor:04X}:{dev.idProduct:04X}'
+                        dev_class = dev.bDeviceClass
+                        dev_name = None
+                        dev_usb = f'USB{int(hex(dev.bcdUSB)[2:]) / 100}'
+                        try:
+                            dev_name = f'{usb.util.get_string(dev, 2)}' if dev.iProduct == 2 else 'unknown'
+                        except:
+                            dev_name = f'unknown'
+                        self.textBrowser_RECEIVE.append(f"ID: {dev_id} Name: {dev_name} {dev_usb}")
+                    except:
+                        pass
+        except Exception as e:
+            self.textBrowser_RECEIVE.append(f"NOT FOUND")
+            self.textBrowser_RECEIVE.append(f"Error:{e}")
+
+    def ConnectDevice(self):
+        self.lastDevice = self.Device
+        try:
+            self.Device = usbdriver.FindDevice(self.VID, self.PID)
+            if self.Device is None:
+
+                self.textBrowser_RECEIVE.append(f'({self.VID}.{self.PID}) NOT FOUND')
+                self.Device = self.lastDevice
+            else:
+                self.DeviceName = usb.util.get_string(self.Device, 2)  # 假设字符串描述符索引为 4
+                self.textBrowser_RECEIVE.append(f'FIND ({self.VID}.{self.PID}):\n{self.DeviceName}')
+        except Exception as e:
+            self.Device = self.lastDevice
+            self.textBrowser_RECEIVE.append(f'({self.VID}.{self.PID}) NOT FOUND')
+            self.textBrowser_RECEIVE.append(f'Error:{e}')
+
+    def ReadConfig(self):
+        try:
+            # self.config, self.interface = ReadConfig(
+            #     self.Device, self.Interface_Number, self.Alternate_setting)
+            #
+            self.config, self.interface = usbdriver.ReadConfig(self.Device, self.Interface_Number)
+            self.lineEdit_Interface.setText(f'{self.interface.bInterfaceNumber}')
+
+            # self.textBrowser_RECEIVE.append(f'{self.Device}')
+
+            self.ep_in, self.ep_out = usbdriver.Endpoints(self.interface)
+
+            self.ParsingEndpoints()
+            self.textBrowser_RECEIVE.append(f'endpoint in:\n{self.ep_in}')
+            self.textBrowser_RECEIVE.append(f'endpoint out:\n{self.ep_out}')
+
+            # print(usb.core.Device.ctrl_transfer(self.Device, 0x80, 0x06, 0x0002, 0x0000, 0x0900))
+            # print(usb.core.Device.ctrl_transfer(self.Device, 0x80, 0x06, 0x0002, 0x0000, 0x2700))
+            # print(usb.core.Device.ctrl_transfer(self.Device, 0x00, 0x09, 0x0100, 0x0000, 0x0000))
+            # print(usb.core.Device.ctrl_transfer(self.Device, 0xc0, 0x5f, 0x0000, 0x0000, 0x0700))
+            # print(usb.core.Device.ctrl_transfer(self.Device, 0xc0, 0x52, 0x0000, 0x0000, 0x0800))
+            # print(usb.core.Device.ctrl_transfer(self.Device, 0xc0, 0x5f, 0x0000, 0x0000, 0x0800))
+            # usbdriver.SendData(self.Device, self.ep_out, bytes.fromhex('aa6100'))
+
+
+
+        except Exception as e:
+            self.textBrowser_RECEIVE.append(f'Error:{e}')
+
+    def ParsingEndpoints(self):
+        # 0 表示 控制端点，1 表示 Isochronous 端点，2 表示 Bulk 端点，3 表示 Interrupt 端点。
+        class_dict = {0: 'Control',
+                      1: 'Isochronous',
+                      2: 'Bulk',
+                      3: 'Interrupt'}
+
+        if self.ep_in is not None:
+            self.EPIAddress = self.ep_in.bEndpointAddress
+            self.EPIClass = class_dict[self.ep_in.bmAttributes]
+            self.EPILength = self.ep_in.bLength
+
+            self.lineEdit_EPIAddress.setText(f'0x{self.EPIAddress:0X}')
+            self.lineEdit_EPIClass.setText(f'{self.EPIClass}')
+            self.lineEdit_EPILength.setText(f'{self.EPILength}')
+        if self.ep_out is not None:
+            self.EPOAddress = self.ep_out.bEndpointAddress
+            self.EPOClass = class_dict[self.ep_out.bmAttributes]
+            self.EPOLength = self.ep_out.bLength
+
+            self.lineEdit_EPOAddress.setText(f'0x{self.EPOAddress:0X}')
+            self.lineEdit_EPOClass.setText(f'{self.EPOClass}')
+            self.lineEdit_EPOLength.setText(f'{self.EPOLength}')
+
+    def ReleaseDevice(self):
+        if self.Device is not None:
+            try:
+                usbdriver.ReleaseDevice(self.Device, self.Interface_Number)
+            except Exception as e:
+                # print(f'{e}')
+                pass
+
+    def Quit(self):
+        self.close()
+        # QCoreApplication.quit()
+        # QCoreApplication.exit(0)
+
+    def DoIfQuit(self):
+        # ============ ADD ===========
+        self.ReleaseDevice()
+        self.parent.show()
+        # print(f'quit{self}')
 
     def closeEvent(self, event):
         # reply = QMessageBox.question(self, '确认', '确定要关闭窗口吗？', QMessageBox.Yes | QMessageBox.No,
@@ -658,7 +948,7 @@ class Sub_BlueTooth(QMainWindow, Ui_Subui_BlueTooth):
         # ============ ADD ===========
         # self.ReleaseDevice()
         self.parent.show()
-        print(f'quit{self}')
+        # print(f'quit{self}')
 
     def closeEvent(self, event):
         # reply = QMessageBox.question(self, '确认', '确定要关闭窗口吗？', QMessageBox.Yes | QMessageBox.No,
@@ -721,7 +1011,7 @@ class Sub_IAP(QMainWindow, Ui_Subui_IAP):
 
         with open(self.file_name, 'rb') as file:
             content = file.read()
-            print(content)
+            # print(content)
             self.textBrowser.append(f'{content}')
             # 对文件内容进行处理，可以在这里编写你的逻辑
 
@@ -772,7 +1062,7 @@ class Sub_IAP(QMainWindow, Ui_Subui_IAP):
         # ============ ADD ===========
         # self.ReleaseDevice()
         self.parent.show()
-        print(f'quit{self}')
+        # print(f'quit{self}')
 
     def closeEvent(self, event):
         # reply = QMessageBox.question(self, '确认', '确定要关闭窗口吗？', QMessageBox.Yes | QMessageBox.No,
@@ -884,7 +1174,7 @@ class Sub_KeyboardLayout(QWidget, Ui_Subui_KeyboardLayout):
             file.write(str(self.Map))
             file.close()
         with open('./config/keyboard_map.bin', 'wb') as file:
-            print(bin_data)
+            # print(bin_data)
             file.write(bin_data)
             file.close()
 
@@ -896,7 +1186,7 @@ class Sub_KeyboardLayout(QWidget, Ui_Subui_KeyboardLayout):
     def DoIfQuit(self):
         # ============ ADD ===========
         self.parent.show()
-        print(f'quit{self}')
+        # print(f'quit{self}')
 
     def closeEvent(self, event):
         # reply = QMessageBox.question(self, '确认', '确定要关闭窗口吗？', QMessageBox.Yes | QMessageBox.No,
@@ -1039,7 +1329,7 @@ class Sub_Audio(QWidget, Ui_Subui_Audio):
     def DoIfQuit(self):
         # ============ ADD ===========
         self.parent.show()
-        print(f'quit{self}')
+        # print(f'quit{self}')
 
     def closeEvent(self, event):
         # reply = QMessageBox.question(self, '确认', '确定要关闭窗口吗？', QMessageBox.Yes | QMessageBox.No,
